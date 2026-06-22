@@ -20,7 +20,6 @@ const MAX_VARIABLES = 9;
 
 // Custom function storage (f, g, h)
 const customFunctions = {};
-const MAX_CUSTOM_FUNCTIONS = 3;
 
 export function setAngleUnit(unit) {
   if (unit === 'deg' || unit === 'rad' || unit === 'grad') {
@@ -100,7 +99,7 @@ export function setVariable(name, value) {
     throw new Error('变量名必须为A-Z的大写字母');
   }
 
-  if (Object.keys(variables).length >= MAX_VARIABLES && !variables[name]) {
+  if (Object.keys(variables).length >= MAX_VARIABLES && !(name in variables)) {
     throw new Error(`最多只能存储${MAX_VARIABLES}个变量`);
   }
 
