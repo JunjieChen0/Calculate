@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
+const { ALLOWED_STORE_KEYS, MAX_STORE_VALUE_SIZE } = require('./shared/constants.cjs');
 
 let mainWindow;
 let store;
@@ -7,14 +8,6 @@ let store;
 const isDev =
   process.env.NODE_ENV === 'development' ||
   (process.env.NODE_ENV !== 'production' && !app.isPackaged);
-
-const ALLOWED_STORE_KEYS = [
-  'calculator_settings',
-  'calculator_memory',
-  'calculator_history',
-  'calculator_theme'
-];
-const MAX_STORE_VALUE_SIZE = 1024 * 1024; // 1MB
 
 function isAllowedStoreKey(key) {
   return typeof key === 'string' && ALLOWED_STORE_KEYS.includes(key);

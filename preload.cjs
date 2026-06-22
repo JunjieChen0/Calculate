@@ -1,11 +1,5 @@
 const { contextBridge, ipcRenderer } = require('electron');
-
-const ALLOWED_STORE_KEYS = [
-  'calculator_settings',
-  'calculator_memory',
-  'calculator_history',
-  'calculator_theme'
-];
+const { ALLOWED_STORE_KEYS } = require('./shared/constants.cjs');
 
 function assertAllowedKey(key) {
   if (typeof key !== 'string' || !ALLOWED_STORE_KEYS.includes(key)) {

@@ -1,3 +1,5 @@
+import { FEEDBACK_DISPLAY_TIMEOUT } from '../shared/constants.js';
+
 export class MemoryManager {
   constructor(store) {
     this.store = store;
@@ -98,7 +100,7 @@ export class MemoryManager {
         if (errorDisplay.textContent === message) {
           errorDisplay.textContent = '';
         }
-      }, 2000);
+      }, FEEDBACK_DISPLAY_TIMEOUT);
     }
   }
 }

@@ -1,11 +1,4 @@
-const ALLOWED_STORE_KEYS = [
-  'calculator_settings',
-  'calculator_memory',
-  'calculator_history',
-  'calculator_theme'
-];
-
-const MAX_STORE_VALUE_SIZE = 1024 * 1024; // 1MB
+import { ALLOWED_STORE_KEYS, MAX_STORE_VALUE_SIZE } from '../shared/constants.js';
 
 function assertAllowedKey(key) {
   if (typeof key !== 'string' || !ALLOWED_STORE_KEYS.includes(key)) {

@@ -164,9 +164,12 @@ describe('addHistory', () => {
     expect(getHistoryItems()[0].mode).toBe('standard');
   });
 
-  it('saves to store', () => {
+  it('saves to store', async () => {
+    vi.useFakeTimers();
     addHistory({ expression: '1+1', result: '2' });
+    await vi.advanceTimersByTimeAsync(300);
     expect(store.set).toHaveBeenCalledWith('calculator_history', expect.any(Array));
+    vi.useRealTimers();
   });
 
   it('enforces MAX_HISTORY_ITEMS limit', () => {

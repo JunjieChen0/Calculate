@@ -1,7 +1,8 @@
 import { escapeHtml, escapeAttr } from './utils/escape.js';
+import { MAX_HISTORY_ITEMS } from './shared/constants.js';
+import { debounce } from './utils/debounce.js';
 
 const STORAGE_KEY = 'calculator_history';
-const MAX_HISTORY_ITEMS = 100;
 
 let historyItems = [];
 let searchQuery = '';
@@ -105,7 +106,7 @@ export function exportHistory() {
   URL.revokeObjectURL(url);
 }
 
-function saveHistory() {
+const debouncedStoreSave = debounce(() => {
   if (store && store.set) {
     store.set(STORAGE_KEY, historyItems).catch(error => {
       console.warn('Failed to save history:', error);
@@ -121,6 +122,10 @@ function saveHistory() {
       }
     });
   }
+}, 300);
+
+function saveHistory() {
+  debouncedStoreSave();
 }
 
 function renderHistory() {

@@ -1,5 +1,6 @@
 import { searchConstants } from '../constants.js';
 import { escapeHtml, escapeAttr } from '../utils/escape.js';
+import { debounce } from '../utils/debounce.js';
 
 export class ConstantsPanelManager {
   constructor(onInsert) {
@@ -7,8 +8,9 @@ export class ConstantsPanelManager {
     this.constantsList = document.getElementById('constants-list');
     this.constantsSearchInput = document.getElementById('constants-search-input');
 
+    const debouncedSearch = debounce(query => this.render(query), 150);
     this.constantsSearchInput?.addEventListener('input', e => {
-      this.render(e.target.value);
+      debouncedSearch(e.target.value);
     });
 
     this.constantsList?.addEventListener('click', event => {

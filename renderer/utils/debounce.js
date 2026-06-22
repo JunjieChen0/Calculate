@@ -1,0 +1,13 @@
+/**
+ * 防抖函数
+ * @param {Function} fn - 要防抖的函数
+ * @param {number} delay - 延迟毫秒数
+ * @returns {Function} 防抖后的函数
+ */
+export function debounce(fn, delay) {
+  let timer = null;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
