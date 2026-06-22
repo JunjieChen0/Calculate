@@ -4,19 +4,16 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 const mockErrorDisplay = { textContent: '' };
 const mockButtons = [];
 
-vi.stubGlobal(
-  'document',
-  {
-    getElementById: id => {
-      if (id === 'error-display') return mockErrorDisplay;
-      return null;
-    },
-    querySelectorAll: selector => {
-      if (selector === '.memory-btn') return mockButtons;
-      return [];
-    }
+vi.stubGlobal('document', {
+  getElementById: id => {
+    if (id === 'error-display') return mockErrorDisplay;
+    return null;
+  },
+  querySelectorAll: selector => {
+    if (selector === '.memory-btn') return mockButtons;
+    return [];
   }
-);
+});
 
 import { MemoryManager } from '../renderer/modules/memory.js';
 
@@ -60,7 +57,12 @@ describe('MemoryManager', () => {
     });
 
     it('handles load error gracefully', async () => {
-      store = { get: vi.fn(async () => { throw new Error('fail'); }), set: vi.fn() };
+      store = {
+        get: vi.fn(async () => {
+          throw new Error('fail');
+        }),
+        set: vi.fn()
+      };
       manager = new MemoryManager(store);
       await manager.load();
       expect(manager.value).toBe(0);

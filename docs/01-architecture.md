@@ -61,15 +61,15 @@
 
 ## 安全模型
 
-| 风险面 | 防御措施 |
-|--------|----------|
-| Node 能力泄漏到渲染层 | `nodeIntegration: false` + `sandbox: true` |
+| 风险面                   | 防御措施                                              |
+| ------------------------ | ----------------------------------------------------- |
+| Node 能力泄漏到渲染层    | `nodeIntegration: false` + `sandbox: true`            |
 | 渲染层访问主进程任意 API | `contextIsolation: true` + `contextBridge` 暴露最小集 |
-| 主进程接受任意 key | `ALLOWED_STORE_KEYS` 白名单 |
-| 主进程接受超大值 | `JSON.stringify(...).length ≤ 1MB` |
-| 任意 frame 触发 IPC | 仅接受主帧（`!event.senderFrame.parent`） |
-| 外部跳转 | `will-navigate` 阻止 + `setWindowOpenHandler` 拒绝 |
-| 远程脚本 | CSP `default-src 'self'` |
+| 主进程接受任意 key       | `ALLOWED_STORE_KEYS` 白名单                           |
+| 主进程接受超大值         | `JSON.stringify(...).length ≤ 1MB`                    |
+| 任意 frame 触发 IPC      | 仅接受主帧（`!event.senderFrame.parent`）             |
+| 外部跳转                 | `will-navigate` 阻止 + `setWindowOpenHandler` 拒绝    |
+| 远程脚本                 | CSP `default-src 'self'`                              |
 
 ## 数据流
 
@@ -108,12 +108,12 @@
 
 四个 key 通过 `electron-store` 持久化到磁盘（OS 用户目录下）：
 
-| Key | 持有者 | 内容 |
-|-----|--------|------|
+| Key                   | 持有者            | 内容                                                                 |
+| --------------------- | ----------------- | -------------------------------------------------------------------- |
 | `calculator_settings` | `SettingsManager` | 精度、显示格式、角度模式、工程符号、分数模式、当前进制、括号自动补全 |
-| `calculator_memory` | `MemoryManager` | `{ value, hasMemory }` |
-| `calculator_history` | `history.js` | 历史条目（最多 100 条） |
-| `calculator_theme` | `theme.js` | `'dark'` / `'light'` |
+| `calculator_memory`   | `MemoryManager`   | `{ value, hasMemory }`                                               |
+| `calculator_history`  | `history.js`      | 历史条目（最多 100 条）                                              |
+| `calculator_theme`    | `theme.js`        | `'dark'` / `'light'`                                                 |
 
 非 Electron 环境（如浏览器调试）会自动降级到 `localStorage`（见 [`utils/store.js`](../renderer/utils/store.js#L33-L66)）。
 

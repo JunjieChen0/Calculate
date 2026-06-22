@@ -157,8 +157,12 @@ function bindEvents() {
     .getElementById('settings-toggle')
     .addEventListener('click', () => panelManager.toggle('settings'));
   document.getElementById('theme-toggle').addEventListener('click', () => toggleTheme());
-  document.getElementById('help-toggle')?.addEventListener('click', () => panelManager.toggle('help'));
-  document.getElementById('help-close')?.addEventListener('click', () => panelManager.toggle('help'));
+  document
+    .getElementById('help-toggle')
+    ?.addEventListener('click', () => panelManager.toggle('help'));
+  document
+    .getElementById('help-close')
+    ?.addEventListener('click', () => panelManager.toggle('help'));
   document
     .getElementById('history-close')
     ?.addEventListener('click', () => panelManager.toggle('history'));
@@ -322,7 +326,10 @@ function recalculateCurrent() {
     } else {
       // Suppress error for incomplete expressions (user still typing)
       const trimmed = currentInput.trim();
-      const isIncomplete = /[+\-*/^(,]$|\b(sin|cos|tan|asin|acos|atan|log|ln|sqrt|abs|floor|ceil|exp|det|inv|transpose|trace|norm|dot|cross|mean|median|std|variance|sum|min|max)\($/.test(trimmed);
+      const isIncomplete =
+        /[+\-*/^(,]$|\b(sin|cos|tan|asin|acos|atan|log|ln|sqrt|abs|floor|ceil|exp|det|inv|transpose|trace|norm|dot|cross|mean|median|std|variance|sum|min|max)\($/.test(
+          trimmed
+        );
       if (!isIncomplete) {
         setError(result.error);
       } else {

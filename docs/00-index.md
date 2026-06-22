@@ -4,15 +4,15 @@
 
 ## 文档导航
 
-| 文档 | 内容 |
-|------|------|
-| [01-architecture.md](./01-architecture.md) | 项目整体架构（主进程 / 预加载 / 渲染进程） |
-| [02-main-process.md](./02-main-process.md) | 主进程与预加载脚本：窗口管理、IPC、持久化存储 |
-| [03-renderer-core.md](./03-renderer-core.md) | 渲染层核心模块：计算引擎、键盘、主题、历史、常量、LaTeX 渲染 |
-| [04-renderer-modules.md](./04-renderer-modules.md) | 渲染层功能模块：面板、内存、设置、表格、绘图、模式辅助 |
-| [05-renderer-utils.md](./05-renderer-utils.md) | 工具模块：HTML 转义、存储抽象 |
-| [06-dependencies.md](./06-dependencies.md) | 依赖关系与第三方库说明 |
-| [07-running.md](./07-running.md) | 安装、运行、构建、测试 |
+| 文档                                               | 内容                                                         |
+| -------------------------------------------------- | ------------------------------------------------------------ |
+| [01-architecture.md](./01-architecture.md)         | 项目整体架构（主进程 / 预加载 / 渲染进程）                   |
+| [02-main-process.md](./02-main-process.md)         | 主进程与预加载脚本：窗口管理、IPC、持久化存储                |
+| [03-renderer-core.md](./03-renderer-core.md)       | 渲染层核心模块：计算引擎、键盘、主题、历史、常量、LaTeX 渲染 |
+| [04-renderer-modules.md](./04-renderer-modules.md) | 渲染层功能模块：面板、内存、设置、表格、绘图、模式辅助       |
+| [05-renderer-utils.md](./05-renderer-utils.md)     | 工具模块：HTML 转义、存储抽象                                |
+| [06-dependencies.md](./06-dependencies.md)         | 依赖关系与第三方库说明                                       |
+| [07-running.md](./07-running.md)                   | 安装、运行、构建、测试                                       |
 
 ## 项目一览
 
@@ -59,18 +59,18 @@ calculate/
 
 ## 关键能力速查
 
-| 能力 | 实现位置 |
-|------|----------|
-| 表达式求值 | `renderer/calculator.js` → `evaluateExpression()` |
-| 8 种计算模式 | `renderer/calculator.js` 中 switch 分支 |
-| LaTeX 渲染 | `renderer/formula-renderer.js` → `inputToLatex()` + KaTeX |
-| 历史记录 | `renderer/history.js` + `renderer/modules/history-panel.js` |
-| 常量库 | `renderer/constants.js` + `renderer/modules/constants-panel.js` |
-| 内存功能 | `renderer/modules/memory.js` (`MemoryManager`) |
-| 设置管理 | `renderer/modules/settings.js` (`SettingsManager`) |
-| 面板调度 | `renderer/modules/panel.js` (`PanelManager`) |
-| 数值表格 | `renderer/modules/table.js` (`TableManager`) |
-| 函数绘图 | `renderer/modules/plot.js` (`PlotManager`) |
-| 主题切换 | `renderer/theme.js` |
-| 持久化 | `renderer/utils/store.js` + `preload.cjs` (electron-store) |
-| 帮助面板 | `renderer/modules/help.js` |
+| 能力         | 实现位置                                                        |
+| ------------ | --------------------------------------------------------------- |
+| 表达式求值   | `renderer/calculator.js` → `evaluateExpression()`               |
+| 8 种计算模式 | `renderer/calculator.js` 中 switch 分支                         |
+| LaTeX 渲染   | `renderer/formula-renderer.js` → `inputToLatex()` + KaTeX       |
+| 历史记录     | `renderer/history.js` + `renderer/modules/history-panel.js`     |
+| 常量库       | `renderer/constants.js` + `renderer/modules/constants-panel.js` |
+| 内存功能     | `renderer/modules/memory.js` (`MemoryManager`)                  |
+| 设置管理     | `renderer/modules/settings.js` (`SettingsManager`)              |
+| 面板调度     | `renderer/modules/panel.js` (`PanelManager`)                    |
+| 数值表格     | `renderer/modules/table.js` (`TableManager`)                    |
+| 函数绘图     | `renderer/modules/plot.js` (`PlotManager`)                      |
+| 主题切换     | `renderer/theme.js`                                             |
+| 持久化       | `renderer/utils/store.js` + `preload.cjs` (electron-store)      |
+| 帮助面板     | `renderer/modules/help.js`                                      |

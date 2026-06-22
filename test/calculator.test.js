@@ -513,7 +513,7 @@ describe('Calculus functions', () => {
     const result = evaluateExpression('integrate(x^2, x, 0, 1)');
     expect(result.success).toBe(true);
     const num = parseFloat(result.result);
-    expect(num).toBeCloseTo(1/3, 2);
+    expect(num).toBeCloseTo(1 / 3, 2);
   });
 
   it('calculates definite integral of sin(x) from 0 to 3.14159', () => {

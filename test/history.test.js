@@ -24,7 +24,21 @@ beforeEach(() => {
           getElementById: id => (id === 'history-list' ? mockListElement : null),
           createElement: tag => {
             if (tag === 'div') {
-              const el = { _text: '', set textContent(v) { this._text = v; }, get textContent() { return this._text; }, get innerHTML() { return this._text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); } };
+              const el = {
+                _text: '',
+                set textContent(v) {
+                  this._text = v;
+                },
+                get textContent() {
+                  return this._text;
+                },
+                get innerHTML() {
+                  return this._text
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+                }
+              };
               return el;
             }
             return { click: vi.fn(), href: '', download: '' };
@@ -78,7 +92,12 @@ describe('initHistory', () => {
   });
 
   it('handles store.get error gracefully', async () => {
-    const store = { get: vi.fn(async () => { throw new Error('fail'); }), set: vi.fn() };
+    const store = {
+      get: vi.fn(async () => {
+        throw new Error('fail');
+      }),
+      set: vi.fn()
+    };
     await initHistory(store);
     expect(getHistoryItems()).toEqual([]);
   });

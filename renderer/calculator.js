@@ -227,7 +227,10 @@ export function evaluateExpression(expression, mode = 'standard') {
   }
 
   // Handle multiple statements separated by colon
-  const statements = expression.split(':').map(s => s.trim()).filter(s => s.length > 0);
+  const statements = expression
+    .split(':')
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
   if (statements.length > 1) {
     let lastResult = '0';
     for (const stmt of statements) {
@@ -284,7 +287,7 @@ export function evaluateExpression(expression, mode = 'standard') {
     });
 
     // Replace variable references (A-Z) with their values
-    expr = expr.replace(/\b([A-Z])\b/g, (match) => {
+    expr = expr.replace(/\b([A-Z])\b/g, match => {
       const val = getVariable(match);
       return val !== undefined ? `(${val})` : match;
     });
@@ -474,7 +477,9 @@ function handleSpecialFunctions(expr) {
   }
 
   // Integral: integrate(f(x), x, a, b) - numerical integration
-  const integralMatch = expr.match(/integrate\s*\(\s*(.+?),\s*([a-zA-Z]),\s*([^,]+),\s*([^)]+)\s*\)/i);
+  const integralMatch = expr.match(
+    /integrate\s*\(\s*(.+?),\s*([a-zA-Z]),\s*([^,]+),\s*([^)]+)\s*\)/i
+  );
   if (integralMatch) {
     const funcExpr = integralMatch[1].trim();
     const variable = integralMatch[2].trim();
@@ -571,7 +576,12 @@ function handleSpecialFunctions(expr) {
   if (expRegMatch) {
     const xData = expRegMatch[1].split(',').map(Number);
     const yData = expRegMatch[2].split(',').map(Number);
-    if (xData.some(isNaN) || yData.some(isNaN) || xData.length !== yData.length || yData.some(y => y <= 0)) {
+    if (
+      xData.some(isNaN) ||
+      yData.some(isNaN) ||
+      xData.length !== yData.length ||
+      yData.some(y => y <= 0)
+    ) {
       throw new Error('指数回归数据无效（y值必须为正）');
     }
     return exponentialRegression(xData, yData);
@@ -595,7 +605,15 @@ function handleSpecialFunctions(expr) {
     const k = Number(binomPMFMatch[1].trim());
     const n = Number(binomPMFMatch[2].trim());
     const p = Number(binomPMFMatch[3].trim());
-    if ([k, n, p].some(isNaN) || !Number.isInteger(k) || !Number.isInteger(n) || k < 0 || k > n || p < 0 || p > 1) {
+    if (
+      [k, n, p].some(isNaN) ||
+      !Number.isInteger(k) ||
+      !Number.isInteger(n) ||
+      k < 0 ||
+      k > n ||
+      p < 0 ||
+      p > 1
+    ) {
       throw new Error('二项分布参数无效');
     }
     return binomialPMF(k, n, p);
@@ -734,7 +752,10 @@ function exponentialCDF(x, lambda) {
  */
 function linearRegression(xData, yData) {
   const n = xData.length;
-  let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+  let sumX = 0,
+    sumY = 0,
+    sumXY = 0,
+    sumX2 = 0;
 
   for (let i = 0; i < n; i++) {
     sumX += xData[i];
@@ -754,8 +775,13 @@ function linearRegression(xData, yData) {
  */
 function quadraticRegression(xData, yData) {
   const n = xData.length;
-  let sumX = 0, sumX2 = 0, sumX3 = 0, sumX4 = 0;
-  let sumY = 0, sumXY = 0, sumX2Y = 0;
+  let sumX = 0,
+    sumX2 = 0,
+    sumX3 = 0,
+    sumX4 = 0;
+  let sumY = 0,
+    sumXY = 0,
+    sumX2Y = 0;
 
   for (let i = 0; i < n; i++) {
     const x = xData[i];
@@ -770,10 +796,22 @@ function quadraticRegression(xData, yData) {
   }
 
   // Solve 3x3 system using Cramer's rule
-  const D = n * (sumX2 * sumX4 - sumX3 * sumX3) - sumX * (sumX * sumX4 - sumX2 * sumX3) + sumX2 * (sumX * sumX3 - sumX2 * sumX2);
-  const Da = sumY * (sumX2 * sumX4 - sumX3 * sumX3) - sumX * (sumXY * sumX4 - sumX2Y * sumX3) + sumX2 * (sumXY * sumX3 - sumX2Y * sumX2);
-  const Db = n * (sumXY * sumX4 - sumX2Y * sumX3) - sumY * (sumX * sumX4 - sumX2 * sumX3) + sumX2 * (sumX * sumX2Y - sumX2 * sumXY);
-  const Dc = n * (sumX2 * sumX2Y - sumX3 * sumXY) - sumX * (sumX * sumX2Y - sumX2 * sumXY) + sumY * (sumX * sumX3 - sumX2 * sumX2);
+  const D =
+    n * (sumX2 * sumX4 - sumX3 * sumX3) -
+    sumX * (sumX * sumX4 - sumX2 * sumX3) +
+    sumX2 * (sumX * sumX3 - sumX2 * sumX2);
+  const Da =
+    sumY * (sumX2 * sumX4 - sumX3 * sumX3) -
+    sumX * (sumXY * sumX4 - sumX2Y * sumX3) +
+    sumX2 * (sumXY * sumX3 - sumX2Y * sumX2);
+  const Db =
+    n * (sumXY * sumX4 - sumX2Y * sumX3) -
+    sumY * (sumX * sumX4 - sumX2 * sumX3) +
+    sumX2 * (sumX * sumX2Y - sumX2 * sumXY);
+  const Dc =
+    n * (sumX2 * sumX2Y - sumX3 * sumXY) -
+    sumX * (sumX * sumX2Y - sumX2 * sumXY) +
+    sumY * (sumX * sumX3 - sumX2 * sumX2);
 
   const a = Da / D;
   const b = Db / D;
@@ -789,7 +827,10 @@ function exponentialRegression(xData, yData) {
   const n = xData.length;
   const lnY = yData.map(y => Math.log(y));
 
-  let sumX = 0, sumLnY = 0, sumXLnY = 0, sumX2 = 0;
+  let sumX = 0,
+    sumLnY = 0,
+    sumXLnY = 0,
+    sumX2 = 0;
 
   for (let i = 0; i < n; i++) {
     sumX += xData[i];
@@ -820,7 +861,8 @@ function normalCDF(x, mu, sigma) {
 
   const absZ = Math.abs(z);
   const t = 1.0 / (1.0 + p * absZ);
-  const erf = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-absZ * absZ / 2);
+  const erf =
+    1.0 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp((-absZ * absZ) / 2);
   const sign = z < 0 ? -1 : 1;
   const cdf = 0.5 * (1.0 + sign * erf);
 
@@ -839,7 +881,7 @@ function binomialPMF(k, n, p) {
  * Poisson PMF
  */
 function poissonPMF(k, lambda) {
-  return parseFloat((Math.pow(lambda, k) * Math.exp(-lambda) / factorial(k)).toPrecision(8));
+  return parseFloat(((Math.pow(lambda, k) * Math.exp(-lambda)) / factorial(k)).toPrecision(8));
 }
 
 /**
@@ -864,9 +906,9 @@ function solveQuadraticInequality(a, b, c, op) {
   if (discriminant < 0) {
     // No real roots
     if (a > 0) {
-      return (op === '>' || op === '>=') ? '所有实数' : '无解';
+      return op === '>' || op === '>=' ? '所有实数' : '无解';
     } else {
-      return (op === '>' || op === '>=') ? '无解' : '所有实数';
+      return op === '>' || op === '>=' ? '无解' : '所有实数';
     }
   }
 
@@ -876,7 +918,10 @@ function solveQuadraticInequality(a, b, c, op) {
 
   if (x1 > x2) [x1, x2] = [x2, x1];
 
-  const rootStr = discriminant === 0 ? `x = ${parseFloat(x1.toPrecision(6))}` : `x₁ = ${parseFloat(x1.toPrecision(6))}, x₂ = ${parseFloat(x2.toPrecision(6))}`;
+  const rootStr =
+    discriminant === 0
+      ? `x = ${parseFloat(x1.toPrecision(6))}`
+      : `x₁ = ${parseFloat(x1.toPrecision(6))}, x₂ = ${parseFloat(x2.toPrecision(6))}`;
 
   if (discriminant === 0) {
     // One root
@@ -889,13 +934,21 @@ function solveQuadraticInequality(a, b, c, op) {
 
   // Two roots
   if (op === '>') {
-    return a > 0 ? `x < ${parseFloat(x1.toPrecision(6))} 或 x > ${parseFloat(x2.toPrecision(6))}` : `${parseFloat(x1.toPrecision(6))} < x < ${parseFloat(x2.toPrecision(6))}`;
+    return a > 0
+      ? `x < ${parseFloat(x1.toPrecision(6))} 或 x > ${parseFloat(x2.toPrecision(6))}`
+      : `${parseFloat(x1.toPrecision(6))} < x < ${parseFloat(x2.toPrecision(6))}`;
   } else if (op === '>=') {
-    return a > 0 ? `x ≤ ${parseFloat(x1.toPrecision(6))} 或 x ≥ ${parseFloat(x2.toPrecision(6))}` : `${parseFloat(x1.toPrecision(6))} ≤ x ≤ ${parseFloat(x2.toPrecision(6))}`;
+    return a > 0
+      ? `x ≤ ${parseFloat(x1.toPrecision(6))} 或 x ≥ ${parseFloat(x2.toPrecision(6))}`
+      : `${parseFloat(x1.toPrecision(6))} ≤ x ≤ ${parseFloat(x2.toPrecision(6))}`;
   } else if (op === '<') {
-    return a > 0 ? `${parseFloat(x1.toPrecision(6))} < x < ${parseFloat(x2.toPrecision(6))}` : `x < ${parseFloat(x1.toPrecision(6))} 或 x > ${parseFloat(x2.toPrecision(6))}`;
+    return a > 0
+      ? `${parseFloat(x1.toPrecision(6))} < x < ${parseFloat(x2.toPrecision(6))}`
+      : `x < ${parseFloat(x1.toPrecision(6))} 或 x > ${parseFloat(x2.toPrecision(6))}`;
   } else if (op === '<=') {
-    return a > 0 ? `${parseFloat(x1.toPrecision(6))} ≤ x ≤ ${parseFloat(x2.toPrecision(6))}` : `x ≤ ${parseFloat(x1.toPrecision(6))} 或 x ≥ ${parseFloat(x2.toPrecision(6))}`;
+    return a > 0
+      ? `${parseFloat(x1.toPrecision(6))} ≤ x ≤ ${parseFloat(x2.toPrecision(6))}`
+      : `x ≤ ${parseFloat(x1.toPrecision(6))} 或 x ≥ ${parseFloat(x2.toPrecision(6))}`;
   }
 
   return rootStr;
