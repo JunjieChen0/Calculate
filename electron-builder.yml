@@ -2,11 +2,14 @@ appId: com.jyy.calculate-jyy
 productName: calculate_JYY
 copyright: Copyright © 2026 JYY
 asar: true
+asarUnpack:
+  - shared/**
 directories:
-  output: dist
+  output: release
 files:
   - main.cjs
   - preload.cjs
+  - shared/**
   - package.json
   - dist/renderer/**
   - assets/icons/**

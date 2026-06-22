@@ -9,6 +9,21 @@ import { formatBaseResult } from './formatter.js';
  * 进制模式表达式求值
  */
 export function evaluateBaseExpression(expr) {
+  // INT/FRAC extraction
+  const intMatch = expr.match(/^int\((.+)\)$/i);
+  if (intMatch) {
+    const value = Number(intMatch[1].trim());
+    if (isNaN(value)) throw new Error('int() 参数必须为数字');
+    return formatBaseResult(Math.trunc(value), getCurrentBase());
+  }
+  const fracMatch = expr.match(/^frac\((.+)\)$/i);
+  if (fracMatch) {
+    const value = Number(fracMatch[1].trim());
+    if (isNaN(value)) throw new Error('frac() 参数必须为数字');
+    const frac = value - Math.trunc(value);
+    return formatBaseResult(frac, getCurrentBase());
+  }
+
   const conversionMatch = expr.match(/^(bin|oct|hex|dec)\((.+)\)$/i);
   if (conversionMatch) {
     const [, func, arg] = conversionMatch;

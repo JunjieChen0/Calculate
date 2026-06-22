@@ -9,6 +9,16 @@ import {
   getEngineeringNotation,
   setFractionMode,
   getFractionMode,
+  setExactMode,
+  getExactMode,
+  setFractionType,
+  getFractionType,
+  setThousandSeparator,
+  getThousandSeparator,
+  setDecimalSeparator,
+  getDecimalSeparator,
+  setLanguage,
+  getLanguage,
   setAngleUnit,
   getAngleUnit
 } from '../calculator.js';
@@ -25,6 +35,8 @@ export class SettingsManager {
     this.engineeringToggle = document.getElementById('engineering-toggle');
     this.settingsAngleToggle = document.getElementById('settings-angle-toggle');
     this.fractionToggle = document.getElementById('fraction-toggle');
+    this.exactToggle = document.getElementById('exact-toggle');
+    this.exactToggleSetting = document.getElementById('exact-toggle-setting');
   }
 
   async load() {
@@ -37,6 +49,11 @@ export class SettingsManager {
         currentBase: 10,
         engineeringNotation: false,
         fractionMode: false,
+        exactMode: false,
+        fractionType: 'improper',
+        thousandSeparator: false,
+        decimalSeparator: '.',
+        language: 'zh',
         angleUnit: 'rad'
       });
       setPrecision(saved.precision);
@@ -44,6 +61,11 @@ export class SettingsManager {
       setCurrentBase(saved.currentBase);
       setEngineeringNotation(saved.engineeringNotation);
       setFractionMode(saved.fractionMode);
+      setExactMode(saved.exactMode);
+      if (saved.fractionType) setFractionType(saved.fractionType);
+      if (saved.thousandSeparator !== undefined) setThousandSeparator(saved.thousandSeparator);
+      if (saved.decimalSeparator) setDecimalSeparator(saved.decimalSeparator);
+      if (saved.language) setLanguage(saved.language);
       if (saved.angleUnit) {
         setAngleUnit(saved.angleUnit);
       }
@@ -65,6 +87,11 @@ export class SettingsManager {
         currentBase: getCurrentBase(),
         engineeringNotation: getEngineeringNotation(),
         fractionMode: getFractionMode(),
+        exactMode: getExactMode(),
+        fractionType: getFractionType(),
+        thousandSeparator: getThousandSeparator(),
+        decimalSeparator: getDecimalSeparator(),
+        language: getLanguage(),
         angleUnit: getAngleUnit()
       });
     } catch (error) {
@@ -91,6 +118,40 @@ export class SettingsManager {
     }
     if (this.fractionToggle) {
       this.fractionToggle.classList.toggle('active', getFractionMode());
+    }
+    if (this.exactToggle) {
+      this.exactToggle.classList.toggle('active', getExactMode());
+    }
+    if (this.exactToggleSetting) {
+      this.exactToggleSetting.textContent = getExactMode() ? '开启' : '关闭';
+      this.exactToggleSetting.classList.toggle('active', getExactMode());
+    }
+    // 分数类型按钮
+    const improperBtn = document.getElementById('fraction-type-improper');
+    const mixedBtn = document.getElementById('fraction-type-mixed');
+    if (improperBtn && mixedBtn) {
+      improperBtn.classList.toggle('active', getFractionType() === 'improper');
+      mixedBtn.classList.toggle('active', getFractionType() === 'mixed');
+    }
+    // 小数点符号按钮
+    const dotBtn = document.getElementById('decimal-dot');
+    const commaBtn = document.getElementById('decimal-comma');
+    if (dotBtn && commaBtn) {
+      dotBtn.classList.toggle('active', getDecimalSeparator() === '.');
+      commaBtn.classList.toggle('active', getDecimalSeparator() === ',');
+    }
+    // 千分位分隔符按钮
+    const thousandSepToggle = document.getElementById('thousand-sep-toggle');
+    if (thousandSepToggle) {
+      thousandSepToggle.textContent = getThousandSeparator() ? '开启' : '关闭';
+      thousandSepToggle.classList.toggle('active', getThousandSeparator());
+    }
+    // 语言按钮
+    const langZhBtn = document.getElementById('lang-zh');
+    const langEnBtn = document.getElementById('lang-en');
+    if (langZhBtn && langEnBtn) {
+      langZhBtn.classList.toggle('active', getLanguage() === 'zh');
+      langEnBtn.classList.toggle('active', getLanguage() === 'en');
     }
     if (this.settingsAngleToggle) {
       this.settingsAngleToggle.textContent = getAngleUnit().toUpperCase();

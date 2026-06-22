@@ -20,6 +20,16 @@ export {
   getEngineeringNotation,
   setFractionMode,
   getFractionMode,
+  setExactMode,
+  getExactMode,
+  setFractionType,
+  getFractionType,
+  setThousandSeparator,
+  getThousandSeparator,
+  setDecimalSeparator,
+  getDecimalSeparator,
+  setLanguage,
+  getLanguage,
   setVariable,
   getVariable,
   getAllVariables,
@@ -29,7 +39,8 @@ export {
   getCustomFunction,
   clearCustomFunction,
   clearAllCustomFunctions,
-  resetAllState
+  resetAllState,
+  _getCustomFunctions
 } from './calculator/state.js';
 
 // 核心引擎

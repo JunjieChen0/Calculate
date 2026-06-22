@@ -4,6 +4,7 @@ import { PlotManager } from './plot.js';
 export class TableManager {
   constructor() {
     this.tableExpression = document.getElementById('table-expression');
+    this.tableExpression2 = document.getElementById('table-expression2');
     this.tableStart = document.getElementById('table-start');
     this.tableEnd = document.getElementById('table-end');
     this.tableStep = document.getElementById('table-step');
@@ -25,7 +26,13 @@ export class TableManager {
       this.plot();
     });
 
-    [this.tableExpression, this.tableStart, this.tableEnd, this.tableStep].forEach(input => {
+    [
+      this.tableExpression,
+      this.tableExpression2,
+      this.tableStart,
+      this.tableEnd,
+      this.tableStep
+    ].forEach(input => {
       input?.addEventListener('keydown', event => {
         if (event.key === 'Enter') {
           this.generate();
@@ -49,6 +56,7 @@ export class TableManager {
 
   generate() {
     const expression = this.tableExpression?.value.trim();
+    const expression2 = this.tableExpression2?.value.trim();
     const start = parseFloat(this.tableStart?.value);
     const end = parseFloat(this.tableEnd?.value);
     const step = parseFloat(this.tableStep?.value);
@@ -65,7 +73,15 @@ export class TableManager {
 
     try {
       const data = generateTable(expression, start, end, step);
-      this.render(data);
+      let data2 = null;
+      if (expression2) {
+        try {
+          data2 = generateTable(expression2, start, end, step);
+        } catch {
+          data2 = null;
+        }
+      }
+      this.render(data, data2);
     } catch (error) {
       this.showEmpty(error.message);
     }
@@ -94,7 +110,7 @@ export class TableManager {
     }
   }
 
-  render(data) {
+  render(data, data2) {
     if (!this.tableResult) {
       return;
     }
@@ -104,16 +120,23 @@ export class TableManager {
       return;
     }
 
+    const hasG = data2 && data2.length > 0;
+
     const rows = data
-      .map(
-        row => `
+      .map((row, idx) => {
+        const gVal = hasG && data2[idx] ? this.formatValue(data2[idx].y) : '';
+        const gCol = hasG ? `<td>${gVal}</td>` : '';
+        return `
       <tr>
         <td>${this.formatValue(row.x)}</td>
         <td>${this.formatValue(row.y)}</td>
+        ${gCol}
       </tr>
-    `
-      )
+    `;
+      })
       .join('');
+
+    const gHeader = hasG ? '<th>g(x)</th>' : '';
 
     this.tableResult.innerHTML = `
       <table class="table-data">
@@ -121,6 +144,7 @@ export class TableManager {
           <tr>
             <th>x</th>
             <th>f(x)</th>
+            ${gHeader}
           </tr>
         </thead>
         <tbody>

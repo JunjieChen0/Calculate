@@ -163,6 +163,18 @@ function solveSpecialEquation(expr) {
     return solveCubic(a, b, c, d);
   }
 
+  // Quartic equation: solve4(a,b,c,d,e)
+  const quarticMatch = expr.match(
+    /solve4\s*\(\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)/i
+  );
+  if (quarticMatch) {
+    const params = quarticMatch.slice(1, 6).map(s => Number(s.trim()));
+    if (params.some(isNaN)) {
+      throw new Error('solve4 参数必须为数字');
+    }
+    return solveQuartic(...params);
+  }
+
   // Linear system 2x2
   const linear2Match = expr.match(
     /solveLinear2\s*\(\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)/i
@@ -209,6 +221,18 @@ function solveSpecialEquation(expr) {
     } catch {
       throw new Error('方程组求解失败，系数矩阵可能接近奇异');
     }
+  }
+
+  // Linear system 4x4
+  const linear4Pattern =
+    /solveLinear4\s*\(\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)/i;
+  const linear4Match = expr.match(linear4Pattern);
+  if (linear4Match) {
+    const params = linear4Match.slice(1, 21).map(s => Number(s.trim()));
+    if (params.some(isNaN)) {
+      throw new Error('solveLinear4 参数必须为数字');
+    }
+    return solveLinear4System(params);
   }
 
   return null;
@@ -271,6 +295,152 @@ function solveCubic(a, b, c, d) {
   }
 
   return roots;
+}
+
+/**
+ * 四次方程求解（Durand-Kerner 数值法）
+ * ax⁴ + bx³ + cx² + dx + e = 0
+ */
+function solveQuartic(a, b, c, d, e) {
+  if (a === 0) {
+    return solveCubic(b, c, d, e);
+  }
+
+  // 使用 Durand-Kerner 方法求全部根
+  const coeffs = [a, b, c, d, e];
+  const n = 4;
+
+  // 初始化4个根（等角度分布在单位圆上）
+  const roots = [];
+  for (let k = 0; k < n; k++) {
+    const angle = (2 * Math.PI * k) / n + 0.4; // 偏移避免对称性
+    roots.push({
+      re: 0.4 * Math.cos(angle),
+      im: 0.4 * Math.sin(angle)
+    });
+  }
+
+  const MAX_ITER = 500;
+  const TOLERANCE = 1e-14;
+
+  for (let iter = 0; iter < MAX_ITER; iter++) {
+    let maxDelta = 0;
+    for (let i = 0; i < n; i++) {
+      // 计算 P(roots[i])
+      let pVal = { re: coeffs[0], im: 0 };
+      for (let j = 1; j <= n; j++) {
+        const temp = {
+          re: pVal.re * roots[i].re - pVal.im * roots[i].im + coeffs[j],
+          im: pVal.re * roots[i].im + pVal.im * roots[i].re
+        };
+        pVal = temp;
+      }
+
+      // 计算分母 Π(roots[i] - roots[j]) for j != i
+      let denom = { re: 1, im: 0 };
+      for (let j = 0; j < n; j++) {
+        if (j === i) continue;
+        const diff = {
+          re: roots[i].re - roots[j].re,
+          im: roots[i].im - roots[j].im
+        };
+        const temp = {
+          re: denom.re * diff.re - denom.im * diff.im,
+          im: denom.re * diff.im + denom.im * diff.re
+        };
+        denom = temp;
+      }
+
+      // 除法: pVal / denom
+      const denomMag2 = denom.re * denom.re + denom.im * denom.im;
+      if (denomMag2 < 1e-30) continue;
+      const delta = {
+        re: (pVal.re * denom.re + pVal.im * denom.im) / denomMag2,
+        im: (pVal.im * denom.re - pVal.re * denom.im) / denomMag2
+      };
+
+      roots[i].re -= delta.re;
+      roots[i].im -= delta.im;
+      const deltaMag = Math.sqrt(delta.re * delta.re + delta.im * delta.im);
+      if (deltaMag > maxDelta) maxDelta = deltaMag;
+    }
+
+    if (maxDelta < TOLERANCE) break;
+  }
+
+  // 格式化结果
+  const result = [];
+  for (const root of roots) {
+    const re = Math.abs(root.re) < 1e-12 ? 0 : root.re;
+    const im = Math.abs(root.im) < 1e-12 ? 0 : root.im;
+
+    if (Math.abs(im) < 1e-10) {
+      result.push(parseFloat(re.toPrecision(12)));
+    } else {
+      const imSign = im >= 0 ? '+' : '-';
+      result.push(`${formatResult(re)} ${imSign} ${formatResult(Math.abs(im))}i`);
+    }
+  }
+
+  // 按实部排序
+  return result.sort((x, y) => {
+    const rx = typeof x === 'number' ? x : parseFloat(x);
+    const ry = typeof y === 'number' ? y : parseFloat(y);
+    return rx - ry;
+  });
+}
+
+/**
+ * 四元一次方程组求解
+ */
+function solveLinear4System(params) {
+  const [a1, b1, c1, d1, e1, a2, b2, c2, d2, e2, a3, b3, c3, d3, e3, a4, b4, c4, d4, e4] = params;
+
+  // 高斯消元法
+  const A = [
+    [a1, b1, c1, d1],
+    [a2, b2, c2, d2],
+    [a3, b3, c3, d3],
+    [a4, b4, c4, d4]
+  ];
+  const B = [e1, e2, e3, e4];
+  const n = 4;
+
+  // 前向消元（部分主元选取）
+  for (let col = 0; col < n; col++) {
+    let maxRow = col;
+    for (let row = col + 1; row < n; row++) {
+      if (Math.abs(A[row][col]) > Math.abs(A[maxRow][col])) {
+        maxRow = row;
+      }
+    }
+    [A[col], A[maxRow]] = [A[maxRow], A[col]];
+    [B[col], B[maxRow]] = [B[maxRow], B[col]];
+
+    if (Math.abs(A[col][col]) < 1e-14) {
+      throw new Error('方程组无解或有无穷多解');
+    }
+
+    for (let row = col + 1; row < n; row++) {
+      const factor = A[row][col] / A[col][col];
+      for (let j = col; j < n; j++) {
+        A[row][j] -= factor * A[col][j];
+      }
+      B[row] -= factor * B[col];
+    }
+  }
+
+  // 回代
+  const x = new Array(n);
+  for (let i = n - 1; i >= 0; i--) {
+    let sum = B[i];
+    for (let j = i + 1; j < n; j++) {
+      sum -= A[i][j] * x[j];
+    }
+    x[i] = sum / A[i][i];
+  }
+
+  return x;
 }
 
 /**

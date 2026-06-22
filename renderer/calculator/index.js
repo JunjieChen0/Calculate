@@ -19,6 +19,8 @@ export {
   getEngineeringNotation,
   setFractionMode,
   getFractionMode,
+  setExactMode,
+  getExactMode,
   setVariable,
   getVariable,
   getAllVariables,

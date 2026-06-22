@@ -8,7 +8,12 @@ import {
   _getDisplayFormat as getDisplayFormat,
   _getFixDecimals as getFixDecimals,
   _getEngineeringNotation as getEngineeringNotation,
-  _getFractionMode as getFractionMode
+  _getFractionMode as getFractionMode,
+  _getExactMode as getExactMode,
+  _getFractionType as getFractionType,
+  _getThousandSeparator as getThousandSeparator,
+  _getDecimalSeparator as getDecimalSeparator,
+  _getLanguage as getLanguage
 } from './state.js';
 
 const math = create(all, { number: 'number', precision: 64 });
@@ -34,26 +39,67 @@ export function formatResult(result) {
     if (getFractionMode() && Number.isFinite(value) && !Number.isInteger(value)) {
       const fraction = toFractionString(value);
       if (fraction) {
+        if (getFractionType() === 'mixed') {
+          // 转换假分数为带分数: "5/3" → "1 2/3"
+          const parts = fraction.split('/');
+          if (parts.length === 2) {
+            const num = Number(parts[0]);
+            const den = Number(parts[1]);
+            if (!isNaN(num) && !isNaN(den) && den !== 0) {
+              const mixed = toMixedFraction(num, den);
+              if (mixed) return mixed;
+            }
+          }
+        }
         return fraction;
+      }
+    }
+
+    if (getExactMode() && Number.isFinite(value) && !Number.isInteger(value)) {
+      const exact = toExactForm(value);
+      if (exact) {
+        return exact;
       }
     }
 
     switch (getDisplayFormat()) {
       case 'fix':
-        return value.toFixed(getFixDecimals());
+        return applySep(value.toFixed(getFixDecimals()));
       case 'sci':
-        return value.toExponential(getFixDecimals());
-      case 'norm':
+        return applySep(value.toExponential(getFixDecimals()));
+      case 'norm1': {
+        const abs = Math.abs(value);
+        if (abs !== 0 && (abs < 1e-2 || abs >= 1e10)) {
+          return applySep(value.toExponential(getFixDecimals()));
+        }
+        const normalValue = parseFloat(value.toPrecision(getPrecision()));
+        if (getEngineeringNotation()) {
+          return applySep(formatEngineering(normalValue));
+        }
+        return applySep(String(normalValue));
+      }
+      case 'norm2': {
+        const abs = Math.abs(value);
+        if (abs !== 0 && (abs < 1e-9 || abs >= 1e10)) {
+          return applySep(value.toExponential(getFixDecimals()));
+        }
+        const normalValue = parseFloat(value.toPrecision(getPrecision()));
+        if (getEngineeringNotation()) {
+          return applySep(formatEngineering(normalValue));
+        }
+        return applySep(String(normalValue));
+      }
       default: {
         const normalValue = parseFloat(value.toPrecision(getPrecision()));
         if (getEngineeringNotation()) {
-          return formatEngineering(normalValue);
+          return applySep(formatEngineering(normalValue));
         }
-        return String(normalValue);
+        return applySep(String(normalValue));
       }
     }
   }
 
+  // 非数字类型直接返回
   if (result instanceof math.Complex) {
     if (Math.abs(result.im) < 1e-14) {
       return formatResult(result.re);
@@ -127,6 +173,28 @@ export function toFractionString(value) {
 }
 
 /**
+ * 将假分数转换为带分数字符串
+ * @param {number} numerator 分子
+ * @param {number} denominator 分母
+ * @returns {string} 带分数格式如 "1 2/3"
+ */
+export function toMixedFraction(numerator, denominator) {
+  if (denominator === 0) return null;
+  const sign = numerator < 0 !== denominator < 0 ? '-' : '';
+  const absNum = Math.abs(numerator);
+  const absDen = Math.abs(denominator);
+  const whole = Math.floor(absNum / absDen);
+  const remainder = absNum % absDen;
+  if (remainder === 0) {
+    return `${sign}${whole}`;
+  }
+  if (whole === 0) {
+    return `${sign}${remainder}/${absDen}`;
+  }
+  return `${sign}${whole} ${remainder}/${absDen}`;
+}
+
+/**
  * 工程符号格式化
  */
 export function formatEngineering(value) {
@@ -186,6 +254,39 @@ export function matrixToString(matrix) {
 }
 
 /**
+ * 在数字字符串中插入千分位逗号
+ */
+export function applyThousandSeparator(str) {
+  if (!str || typeof str !== 'string') return str;
+  // 不处理科学计数法、NaN、∞
+  if (str.includes('e') || str.includes('E') || str.includes('NaN') || str.includes('∞'))
+    return str;
+  const parts = str.split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return parts.join('.');
+}
+
+function applySep(str) {
+  let result = str;
+  if (getThousandSeparator()) {
+    result = applyThousandSeparator(result);
+  }
+  if (getDecimalSeparator() === ',') {
+    // 欧洲格式: 小数点→逗号，千分位逗号→句点
+    if (getThousandSeparator()) {
+      result = result.replace(/,/g, '#TMP#').replace(/\./g, ',').replace(/#TMP#/g, '.');
+    } else {
+      result = result.replace(/\./g, ',');
+    }
+  }
+  return result;
+}
+
+function t(zhKey, enKey) {
+  return getLanguage() === 'en' ? enKey : zhKey;
+}
+
+/**
  * 友好错误消息
  */
 export function getFriendlyError(error) {
@@ -193,45 +294,166 @@ export function getFriendlyError(error) {
   const lowerMessage = message.toLowerCase();
 
   if (lowerMessage.includes('undefined symbol')) {
-    return '未知符号，请检查输入';
+    return t('未知符号，请检查输入', 'Unknown symbol, check input');
   }
   if (lowerMessage.includes('unexpected end of expression')) {
-    return '表达式不完整';
+    return t('表达式不完整', 'Incomplete expression');
   }
   if (lowerMessage.includes('parenthesis') && lowerMessage.includes('unexpected')) {
-    return '括号不匹配';
+    return t('括号不匹配', 'Mismatched parentheses');
   }
   if (lowerMessage.includes('unit')) {
-    return '单位错误，请检查单位换算格式';
+    return t('单位错误，请检查单位换算格式', 'Unit error, check conversion format');
   }
   if (lowerMessage.includes('complex number')) {
-    return '复数运算错误';
+    return t('复数运算错误', 'Complex number error');
   }
   if (lowerMessage.includes('matrix') || lowerMessage.includes('dimension mismatch')) {
-    return '矩阵运算错误，请检查维度';
+    return t('矩阵运算错误，请检查维度', 'Matrix error, check dimensions');
   }
   if (lowerMessage.includes('no valid full parametric solution')) {
-    return '方程求解失败，请检查表达式';
+    return t('方程求解失败，请检查表达式', 'Equation solving failed');
   }
   if (lowerMessage.includes('division by zero') || lowerMessage.includes('divide by zero')) {
-    return '除零错误';
+    return t('除零错误', 'Division by zero');
   }
   if (lowerMessage.includes('unexpected type')) {
-    return '参数类型错误，请检查输入';
+    return t('参数类型错误，请检查输入', 'Parameter type error, check input');
   }
   if (lowerMessage.includes('string value expected')) {
-    return '字符串值预期，请检查输入格式';
+    return t('字符串值预期，请检查输入格式', 'String value expected, check format');
   }
   if (lowerMessage.includes('is not a function')) {
-    return '函数调用错误，请检查输入';
+    return t('函数调用错误，请检查输入', 'Function call error, check input');
   }
   if (lowerMessage.includes('cannot convert')) {
-    return '数值转换错误，请检查输入';
+    return t('数值转换错误，请检查输入', 'Value conversion error, check input');
   }
   if (lowerMessage.includes('syntax error')) {
-    return '语法错误，请检查表达式格式';
+    return t('语法错误，请检查表达式格式', 'Syntax error, check expression');
   }
-  return '计算错误，请检查输入';
+  return t('计算错误，请检查输入', 'Calculation error, check input');
+}
+
+/**
+ * 将浮点数还原为精确符号形式（√n, a√b, π, e 等）
+ * 返回字符串如 "√2", "2√3", "π/2" 等；无法识别则返回 null
+ */
+export function toExactForm(value) {
+  if (!Number.isFinite(value) || Number.isInteger(value)) {
+    return null;
+  }
+
+  const absValue = Math.abs(value);
+  const sign = value < 0 ? '-' : '';
+
+  // 1. 检查是否为 π 的有理倍数:  k * π
+  const piMult = absValue / Math.PI;
+  if (Math.abs(piMult - Math.round(piMult)) < 1e-10) {
+    const k = Math.round(piMult);
+    if (k === 1) return `${sign}π`;
+    if (k === -1) return `${sign}π`;
+    return `${sign}${k}π`;
+  }
+
+  // 2. 检查是否为 e 的有理倍数:  k * e
+  const eMult = absValue / Math.E;
+  if (Math.abs(eMult - Math.round(eMult)) < 1e-10) {
+    const k = Math.round(eMult);
+    if (k === 1) return `${sign}e`;
+    return `${sign}${k}e`;
+  }
+
+  // 3. 检查是否为 √n 形式:  value² ≈ n (n 为整数)
+  const squared = absValue * absValue;
+  const n = Math.round(squared);
+  if (n > 1 && Math.abs(squared - n) < 1e-10) {
+    // 化简 √n = a√b，其中 b 无平方因子
+    const simplified = simplifySquareRoot(n);
+    if (simplified.a === 1) {
+      return `${sign}√${simplified.b}`;
+    }
+    return `${sign}${simplified.a}√${simplified.b}`;
+  }
+
+  // 4. 检查是否为 a√b 形式:  value / √n ≈ 整数
+  // 遍历可能的 b (2~1000，无平方因子)
+  for (let b = 2; b <= 1000; b++) {
+    if (!isSquareFree(b)) continue;
+    const sqrtB = Math.sqrt(b);
+    const a = absValue / sqrtB;
+    const aRounded = Math.round(a);
+    if (aRounded > 0 && Math.abs(a - aRounded) < 1e-10) {
+      if (aRounded === 1) {
+        return `${sign}√${b}`;
+      }
+      return `${sign}${aRounded}√${b}`;
+    }
+  }
+
+  // 5. 检查是否为 π/√n 或 √n/π 等组合
+  // π/√n
+  const piOverSqrt = Math.PI / absValue;
+  const piOverSqrtSq = piOverSqrt * piOverSqrt;
+  const piOverN = Math.round(piOverSqrtSq);
+  if (piOverN > 1 && Math.abs(piOverSqrtSq - piOverN) < 1e-10) {
+    const simplified = simplifySquareRoot(piOverN);
+    if (simplified.a === 1) {
+      return `${sign}π/√${simplified.b}`;
+    }
+    return `${sign}π/${simplified.a}√${simplified.b}`;
+  }
+
+  // 6. 检查是否为常见特殊值
+  const specialValues = [
+    { value: Math.SQRT2, form: '√2' },
+    { value: Math.SQRT1_2, form: '√2/2' },
+    { value: Math.PI / 2, form: 'π/2' },
+    { value: Math.PI / 3, form: 'π/3' },
+    { value: Math.PI / 4, form: 'π/4' },
+    { value: Math.PI / 6, form: 'π/6' },
+    { value: Math.PI * 2, form: '2π' },
+    { value: Math.PI / 180, form: 'π/180' },
+    { value: Math.E / 2, form: 'e/2' },
+    { value: Math.LOG10E, form: 'log₁₀e' },
+    { value: Math.LOG2E, form: 'log₂e' },
+    { value: Math.LN10, form: 'ln10' },
+    { value: Math.LN2, form: 'ln2' }
+  ];
+
+  for (const sv of specialValues) {
+    if (Math.abs(absValue - sv.value) < 1e-10) {
+      return `${sign}${sv.form}`;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * 化简平方根: √n = a√b，其中 b 无平方因子
+ */
+function simplifySquareRoot(n) {
+  let a = 1;
+  let b = n;
+  for (let i = 2; i * i <= b; i++) {
+    while (b % (i * i) === 0) {
+      a *= i;
+      b /= i * i;
+    }
+  }
+  return { a, b };
+}
+
+/**
+ * 判断 n 是否为无平方因子数（square-free）
+ */
+function isSquareFree(n) {
+  if (n < 2) return false;
+  for (let i = 2; i * i <= n; i++) {
+    if (n % (i * i) === 0) return false;
+  }
+  return true;
 }
 
 /**

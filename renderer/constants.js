@@ -191,6 +191,140 @@ export const CONSTANTS = [
     value: '1.73205080757',
     category: '数学',
     insert: 'sqrt(3)'
+  },
+  {
+    name: '欧拉-马歇罗尼常数',
+    symbol: 'γ',
+    value: '0.57721566490',
+    category: '数学',
+    insert: '0.57721566490'
+  },
+  {
+    name: '斯特藩-玻尔兹曼常数',
+    symbol: 'σ',
+    value: '5.670374419e-8 W/(m²·K⁴)',
+    category: '物理',
+    insert: '5.670374419e-8',
+    unit: 'W/(m²·K⁴)'
+  },
+  {
+    name: '里德伯常数',
+    symbol: 'R∞',
+    value: '1.0973731568e7 m⁻¹',
+    category: '物理',
+    insert: '1.0973731568e7',
+    unit: 'm⁻¹'
+  },
+  {
+    name: '玻尔半径',
+    symbol: 'a₀',
+    value: '5.29177210903e-11 m',
+    category: '物理',
+    insert: '5.29177210903e-11',
+    unit: 'm'
+  },
+  {
+    name: '精细结构常数',
+    symbol: 'α',
+    value: '0.0072973525693',
+    category: '物理',
+    insert: '0.0072973525693'
+  },
+  {
+    name: '经典电子半径',
+    symbol: 'rₑ',
+    value: '2.8179403227e-15 m',
+    category: '物理',
+    insert: '2.8179403227e-15',
+    unit: 'm'
+  },
+  {
+    name: '电子康普顿波长',
+    symbol: 'λ_C',
+    value: '2.42631023867e-12 m',
+    category: '物理',
+    insert: '2.42631023867e-12',
+    unit: 'm'
+  },
+  {
+    name: '玻尔磁子',
+    symbol: 'μ_B',
+    value: '9.2740100783e-24 J/T',
+    category: '物理',
+    insert: '9.2740100783e-24',
+    unit: 'J/T'
+  },
+  {
+    name: '核磁子',
+    symbol: 'μ_N',
+    value: '5.0507837461e-27 J/T',
+    category: '物理',
+    insert: '5.0507837461e-27',
+    unit: 'J/T'
+  },
+  {
+    name: '磁通量子',
+    symbol: 'Φ₀',
+    value: '2.067833848e-15 Wb',
+    category: '物理',
+    insert: '2.067833848e-15',
+    unit: 'Wb'
+  },
+  {
+    name: '第一辐射常数',
+    symbol: 'c₁',
+    value: '3.741771852e-16 W·m²',
+    category: '物理',
+    insert: '3.741771852e-16',
+    unit: 'W·m²'
+  },
+  {
+    name: '第二辐射常数',
+    symbol: 'c₂',
+    value: '1.4387768775e-2 m·K',
+    category: '物理',
+    insert: '1.4387768775e-2',
+    unit: 'm·K'
+  },
+  {
+    name: '自由空间阻抗',
+    symbol: 'Z₀',
+    value: '376.730313668 Ω',
+    category: '物理',
+    insert: '376.730313668',
+    unit: 'Ω'
+  },
+  {
+    name: '地球半径',
+    symbol: 'R⊕',
+    value: '6.371e6 m',
+    category: '天文',
+    insert: '6.371e6',
+    unit: 'm'
+  },
+  {
+    name: '月球质量',
+    symbol: 'M☽',
+    value: '7.342e22 kg',
+    category: '天文',
+    insert: '7.342e22',
+    unit: 'kg'
+  },
+  {
+    name: '月球半径',
+    symbol: 'R☽',
+    value: '1.7374e6 m',
+    category: '天文',
+    insert: '1.7374e6',
+    unit: 'm'
+  },
+  {
+    name: '太阳半径',
+    symbol: 'R☉',
+    value: '6.9634e8 m',
+    category: '天文',
+    insert: '6.9634e8',
+    unit: 'm'
   }
 ];
 

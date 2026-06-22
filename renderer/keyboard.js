@@ -12,7 +12,8 @@ export function initKeyboard({
   getCurrentMode,
   isPanelOpen,
   closePanel,
-  onToggleHelp
+  onToggleHelp,
+  onUndo
 }) {
   document.addEventListener('keydown', event => {
     // Ignore when typing in editable fields
@@ -105,6 +106,10 @@ export function initKeyboard({
     // Shortcuts
     if (event.ctrlKey || event.metaKey) {
       switch (key.toLowerCase()) {
+        case 'z':
+          event.preventDefault();
+          if (onUndo) onUndo();
+          break;
         case 'h':
           event.preventDefault();
           onToggleHistory();

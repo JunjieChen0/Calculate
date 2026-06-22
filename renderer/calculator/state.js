@@ -13,6 +13,11 @@ let fixDecimals = 4;
 let currentBase = 10; // 10 | 2 | 8 | 16
 let engineeringNotation = false;
 let fractionMode = false;
+let exactMode = false;
+let fractionType = 'improper'; // 'improper' | 'mixed'
+let thousandSeparator = false;
+let decimalSeparator = '.'; // '.' | ','
+let language = 'zh'; // 'zh' | 'en'
 
 // Variable storage (A-Z, 9 variables)
 const variables = {};
@@ -58,7 +63,8 @@ export function getPrecision() {
 
 // --- 显示格式 ---
 export function setDisplayFormat(format, decimals = 4) {
-  if (format === 'norm' || format === 'fix' || format === 'sci') {
+  if (format === 'norm') format = 'norm1'; // 向后兼容
+  if (format === 'norm1' || format === 'norm2' || format === 'fix' || format === 'sci') {
     displayFormat = format;
     fixDecimals = Math.max(0, Math.min(15, Math.floor(decimals)));
   }
@@ -95,6 +101,57 @@ export function setFractionMode(enabled) {
 
 export function getFractionMode() {
   return fractionMode;
+}
+
+// --- 精确模式 ---
+export function setExactMode(enabled) {
+  exactMode = !!enabled;
+}
+
+export function getExactMode() {
+  return exactMode;
+}
+
+// --- 分数类型 ---
+export function setFractionType(type) {
+  if (type === 'improper' || type === 'mixed') {
+    fractionType = type;
+  }
+}
+
+export function getFractionType() {
+  return fractionType;
+}
+
+// --- 千分位分隔符 ---
+export function setThousandSeparator(enabled) {
+  thousandSeparator = !!enabled;
+}
+
+export function getThousandSeparator() {
+  return thousandSeparator;
+}
+
+// --- 小数点符号 ---
+export function setDecimalSeparator(sep) {
+  if (sep === '.' || sep === ',') {
+    decimalSeparator = sep;
+  }
+}
+
+export function getDecimalSeparator() {
+  return decimalSeparator;
+}
+
+// --- 语言 ---
+export function setLanguage(lang) {
+  if (lang === 'zh' || lang === 'en') {
+    language = lang;
+  }
+}
+
+export function getLanguage() {
+  return language;
 }
 
 // --- 变量存储 ---
@@ -184,6 +241,11 @@ export function resetAllState() {
   currentBase = 10;
   engineeringNotation = false;
   fractionMode = false;
+  exactMode = false;
+  fractionType = 'improper';
+  thousandSeparator = false;
+  decimalSeparator = '.';
+  language = 'zh';
 }
 
 // --- 供其他模块访问内部状态的 getter ---
@@ -210,6 +272,21 @@ export function _getEngineeringNotation() {
 }
 export function _getFractionMode() {
   return fractionMode;
+}
+export function _getExactMode() {
+  return exactMode;
+}
+export function _getFractionType() {
+  return fractionType;
+}
+export function _getThousandSeparator() {
+  return thousandSeparator;
+}
+export function _getDecimalSeparator() {
+  return decimalSeparator;
+}
+export function _getLanguage() {
+  return language;
 }
 export function _getVariables() {
   return variables;

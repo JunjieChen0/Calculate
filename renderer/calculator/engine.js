@@ -10,7 +10,8 @@ import {
   getVariable,
   setVariable,
   setCustomFunction,
-  _getCustomFunctions as getCustomFunctions
+  _getCustomFunctions as getCustomFunctions,
+  _getDecimalSeparator as getDecimalSeparator
 } from './state.js';
 import { formatResult, getFriendlyError } from './formatter.js';
 import { applyAngleConversions, convertInverseTrigOutput } from './angle-utils.js';
@@ -85,8 +86,22 @@ export function evaluateExpression(expression, mode = 'standard') {
     // Replace display symbols with mathjs-compatible ones
     expr = expr.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
 
+    // Handle comma as decimal separator (European format)
+    if (getDecimalSeparator() === ',') {
+      expr = expr.replace(/,/g, '.');
+    }
+
     // Handle deg suffix: "90deg" -> "90 deg" for unit conversion
     expr = expr.replace(/(\d)deg\b/g, '$1 deg');
+
+    // Handle mixed fraction input: "1 2/3" -> "(1 + 2/3)"
+    // Also handle plain fraction "2/3" -> "(2/3)"
+    // Must be done before variable assignment check to avoid interfering with "A=1 2/3"
+    expr = expr.replace(/(\d+)\s+(\d+)\/(\d+)/g, '($1 + $2/$3)');
+    expr = expr.replace(/(?<![A-Za-z0-9_)])\/(\d+\/(\d+))/g, '($1/$2)');
+    // Simple standalone fraction like "2/3" at start or after operator
+    // eslint-disable-next-line no-useless-escape
+    expr = expr.replace(/(?<=[\+\-\*\/\^\(=,]|^)(\d+)\/(\d+)(?=[\+\-\*\/\^\),]|$)/g, '($1/$2)');
 
     // Handle variable assignment: A=5, B=10, etc.
     const assignMatch = expr.match(/^([A-Z])\s*=\s*(.+)$/);
@@ -132,6 +147,12 @@ export function evaluateExpression(expression, mode = 'standard') {
     expr = expr.replace(/\bnPr\(/g, 'permutations(');
     expr = expr.replace(/\bnCr\(/g, 'combinations(');
     expr = expr.replace(/\brand\(\)/g, 'random()');
+    expr = expr.replace(/\brandInt\s*\(\s*([^,]+),\s*([^)]+)\s*\)/gi, (_, a, b) => {
+      const lo = Math.ceil(Number(a));
+      const hi = Math.floor(Number(b));
+      if (isNaN(lo) || isNaN(hi) || lo > hi) throw new Error('randInt(a,b) 参数无效');
+      return Math.floor(Math.random() * (hi - lo + 1)) + lo;
+    });
 
     // Handle special calculator functions
     const specialResult = handleSpecialFunctions(expr);

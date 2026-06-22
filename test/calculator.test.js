@@ -727,3 +727,247 @@ describe('Exponential distribution', () => {
     expect(num).toBeCloseTo(0.86, 1);
   });
 });
+
+describe('Verify mode', () => {
+  it('verifies correct equation 3*?=12 with ?=4', () => {
+    const result = evaluateExpression('verify(3*?,12,4)');
+    expect(result.success).toBe(true);
+    expect(result.result).toContain('Correct');
+  });
+
+  it('verifies incorrect equation 3*?=12 with ?=5', () => {
+    const result = evaluateExpression('verify(3*?,12,5)');
+    expect(result.success).toBe(true);
+    expect(result.result).toContain('15');
+  });
+
+  it('verifies quadratic equation with placeholder', () => {
+    const result = evaluateExpression('verify(?^2-4,0,2)');
+    expect(result.success).toBe(true);
+    expect(result.result).toContain('Correct');
+  });
+
+  it('verifies equation with ? on both sides', () => {
+    const result = evaluateExpression('verify(?+1,?+1,100)');
+    expect(result.success).toBe(true);
+    expect(result.result).toContain('Correct');
+  });
+});
+
+describe('Math Box - Dice simulation', () => {
+  it('rolls correct number of dice', () => {
+    const result = evaluateExpression('dice(5)');
+    expect(result.success).toBe(true);
+    // Should contain 5 comma-separated values
+    const match = result.result.match(/\[([^\]]+)\]/);
+    expect(match).not.toBeNull();
+    const rolls = match[1].split(',');
+    expect(rolls.length).toBe(5);
+    rolls.forEach(r => {
+      const n = parseInt(r);
+      expect(n).toBeGreaterThanOrEqual(1);
+      expect(n).toBeLessThanOrEqual(6);
+    });
+  });
+
+  it('rolls single die', () => {
+    const result = evaluateExpression('dice(1)');
+    expect(result.success).toBe(true);
+    const match = result.result.match(/\[([^\]]+)\]/);
+    expect(match).not.toBeNull();
+    const n = parseInt(match[1]);
+    expect(n).toBeGreaterThanOrEqual(1);
+    expect(n).toBeLessThanOrEqual(6);
+  });
+
+  it('shows frequency summary', () => {
+    const result = evaluateExpression('dice(10)');
+    expect(result.success).toBe(true);
+    expect(result.result).toContain('1:');
+  });
+});
+
+describe('Math Box - Coin simulation', () => {
+  it('flips correct number of coins', () => {
+    const result = evaluateExpression('coin(10)');
+    expect(result.success).toBe(true);
+    expect(result.result).toContain('H:');
+    expect(result.result).toContain('T:');
+  });
+
+  it('flips single coin', () => {
+    const result = evaluateExpression('coin(1)');
+    expect(result.success).toBe(true);
+    const hasH = result.result.includes('H:');
+    const hasT = result.result.includes('T:');
+    expect(hasH || hasT).toBe(true);
+  });
+
+  it('H and T counts sum to n', () => {
+    const result = evaluateExpression('coin(20)');
+    expect(result.success).toBe(true);
+    const hMatch = result.result.match(/H:(\d+)/);
+    const tMatch = result.result.match(/T:(\d+)/);
+    expect(hMatch).not.toBeNull();
+    expect(tMatch).not.toBeNull();
+    expect(parseInt(hMatch[1]) + parseInt(tMatch[1])).toBe(20);
+  });
+});
+
+describe('Constants library expansion', () => {
+  it('has at least 40 constants', () => {
+    expect(CONSTANTS.length).toBeGreaterThanOrEqual(40);
+  });
+
+  it('contains Stefan-Boltzmann constant', () => {
+    const results = searchConstants('斯特藩');
+    expect(results.length).toBe(1);
+    expect(results[0].symbol).toBe('σ');
+  });
+
+  it('contains Rydberg constant', () => {
+    const results = searchConstants('里德伯');
+    expect(results.length).toBe(1);
+    expect(results[0].symbol).toBe('R∞');
+  });
+
+  it('contains Bohr radius', () => {
+    const results = searchConstants('玻尔半径');
+    expect(results.length).toBe(1);
+    expect(results[0].symbol).toBe('a₀');
+  });
+
+  it('contains fine-structure constant', () => {
+    const results = searchConstants('精细结构');
+    expect(results.length).toBe(1);
+    expect(results[0].symbol).toBe('α');
+  });
+
+  it('contains Euler-Mascheroni constant', () => {
+    const results = searchConstants('欧拉');
+    expect(results.length).toBe(1);
+    expect(results[0].symbol).toBe('γ');
+  });
+
+  it('contains Earth radius', () => {
+    const results = searchConstants('地球半径');
+    expect(results.length).toBe(1);
+    expect(results[0].category).toBe('天文');
+  });
+
+  it('contains Moon mass', () => {
+    const results = searchConstants('月球质量');
+    expect(results.length).toBe(1);
+    expect(results[0].category).toBe('天文');
+  });
+
+  it('search by category works', () => {
+    const results = searchConstants('天文');
+    expect(results.length).toBeGreaterThanOrEqual(6);
+  });
+});
+
+describe('Quartic equation solving', () => {
+  it('solves x^4 - 10x^2 + 9 = 0 (roots ±1, ±3)', () => {
+    const result = evaluateExpression('solve4(1,0,-10,0,9)', 'solve');
+    expect(result.success).toBe(true);
+    expect(result.result).toContain('1');
+    expect(result.result).toContain('3');
+  });
+});
+
+describe('Quartic inequality solving', () => {
+  it('solves x^4 - 5x^2 + 4 > 0', () => {
+    const result = evaluateExpression('solveIneq(1,0,-5,0,4,">")', 'solve');
+    expect(result.success).toBe(true);
+  });
+});
+
+describe('Power regression', () => {
+  it('calculates power regression', () => {
+    const result = evaluateExpression('powerReg([1,2,3,4],[1,4,9,16])', 'stats');
+    expect(result.success).toBe(true);
+    expect(result.result).toBeDefined();
+  });
+});
+
+describe('Logarithmic regression', () => {
+  it('calculates logarithmic regression', () => {
+    const result = evaluateExpression('logReg([1,2,3,4,5],[0,0.69,1.1,1.39,1.61])', 'stats');
+    expect(result.success).toBe(true);
+    expect(result.result).toBeDefined();
+  });
+});
+
+describe('Logistic regression', () => {
+  it('calculates logistic regression', () => {
+    const result = evaluateExpression(
+      'logisticReg([0,1,2,3,4,5],[0.1,0.3,0.6,0.8,0.9,0.95])',
+      'stats'
+    );
+    expect(result.success).toBe(true);
+    expect(result.result).toBeDefined();
+  });
+});
+
+describe('Inverse normal CDF', () => {
+  it('invNorm(0.5,0,1) = 0', () => {
+    const result = evaluateExpression('invNorm(0.5,0,1)', 'stats');
+    expect(result.success).toBe(true);
+    const num = parseFloat(result.result);
+    expect(num).toBeCloseTo(0, 1);
+  });
+
+  it('invNorm(0.975,0,1) ≈ 1.96', () => {
+    const result = evaluateExpression('invNorm(0.975,0,1)', 'stats');
+    expect(result.success).toBe(true);
+    const num = parseFloat(result.result);
+    expect(num).toBeCloseTo(1.96, 1);
+  });
+});
+
+describe('Binomial CDF', () => {
+  it('binomCDF(2,5,0.5) correct value', () => {
+    const result = evaluateExpression('binomCDF(2,5,0.5)', 'stats');
+    expect(result.success).toBe(true);
+    const num = parseFloat(result.result);
+    expect(num).toBeCloseTo(0.5, 1);
+  });
+});
+
+describe('Poisson CDF', () => {
+  it('poissonCDF(2,3) correct value', () => {
+    const result = evaluateExpression('poissonCDF(2,3)', 'stats');
+    expect(result.success).toBe(true);
+    const num = parseFloat(result.result);
+    expect(num).toBeCloseTo(0.423, 1);
+  });
+});
+
+describe('Variable storage - extended', () => {
+  afterAll(() => {
+    evaluateExpression('A=0:B=0:C=0');
+  });
+
+  it('stores variable Z', () => {
+    const result = evaluateExpression('Z=99');
+    expect(result.success).toBe(true);
+    expect(result.result).toContain('99');
+  });
+
+  it('retrieves variable Z', () => {
+    evaluateExpression('Z=42');
+    const result = evaluateExpression('Z');
+    expect(result.success).toBe(true);
+    expect(result.result).toBe('42');
+  });
+});
+
+describe('Custom functions - extended', () => {
+  it('defines and calls function h(x)', () => {
+    evaluateExpression('h(x)=2*x+1');
+    const result = evaluateExpression('h(5)');
+    expect(result.success).toBe(true);
+    expect(result.result).toBe('11');
+  });
+});

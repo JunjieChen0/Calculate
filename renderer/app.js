@@ -12,7 +12,14 @@ import {
   setEngineeringNotation,
   getEngineeringNotation,
   setFractionMode,
-  getFractionMode
+  getFractionMode,
+  setExactMode,
+  getExactMode,
+  setFractionType,
+  setThousandSeparator,
+  getThousandSeparator,
+  setDecimalSeparator,
+  setLanguage
 } from './calculator.js';
 import { initHistory, addHistory, clearHistory } from './history.js';
 import { initTheme, toggleTheme } from './theme.js';
@@ -32,6 +39,10 @@ import { TableManager } from './modules/table.js';
 import { ConstantsPanelManager } from './modules/constants-panel.js';
 import { HistoryPanelManager } from './modules/history-panel.js';
 import { HelpPanelManager } from './modules/help.js';
+import { StatsEditor } from './modules/stats-editor.js';
+import { VariablesPanelManager } from './modules/variables-panel.js';
+import { SpreadsheetManager } from './modules/spreadsheet.js';
+import { qrToDataURL } from './modules/qrcode.js';
 
 // DOM Elements
 const helperPanel = document.getElementById('helper-panel');
@@ -42,13 +53,31 @@ let currentInput = '';
 let currentMode = 'standard';
 let lastResult = '0';
 let cursorIndex = 0;
+const undoStack = [];
+const MAX_UNDO = 50;
+
+function pushUndo() {
+  undoStack.push({ input: currentInput, cursor: cursorIndex });
+  if (undoStack.length > MAX_UNDO) undoStack.shift();
+}
+
+function handleUndo() {
+  if (undoStack.length === 0) return;
+  const state = undoStack.pop();
+  currentInput = state.input;
+  cursorIndex = state.cursor;
+  updateDisplayWithCursor();
+}
 
 // Managers
 const store = createStore();
 const panelManager = new PanelManager();
 const settingsManager = new SettingsManager(store);
 const memoryManager = new MemoryManager(store);
+const statsEditor = new StatsEditor();
 new TableManager();
+let varsPanelMgr;
+let spreadsheetMgr;
 
 // Initialization
 async function init() {
@@ -57,6 +86,8 @@ async function init() {
   await memoryManager.load();
   await settingsManager.load();
   new ConstantsPanelManager(insertText);
+  varsPanelMgr = new VariablesPanelManager(insertText);
+  spreadsheetMgr = new SpreadsheetManager();
   new HistoryPanelManager(handleHistorySelect);
   new HelpPanelManager();
   bindEvents();
@@ -77,7 +108,8 @@ async function init() {
     getCurrentMode: () => currentMode,
     isPanelOpen: () => panelManager.activePanel !== null,
     closePanel: () => panelManager.closeAll(),
-    onToggleHelp: () => panelManager.toggle('help')
+    onToggleHelp: () => panelManager.toggle('help'),
+    onUndo: handleUndo
   });
   updateDisplayWithCursor();
 }
@@ -140,7 +172,24 @@ function bindEvents() {
       renderHelperPanel(currentMode, helperPanel);
       updateBaseKeyboard(getCurrentBase());
       updateDisplay(currentInput, lastResult);
+      // 显示/隐藏统计编辑器
+      if (currentMode === 'stats') {
+        statsEditor.show();
+      } else {
+        statsEditor.hide();
+      }
     });
+  });
+
+  // Stats editor insert event
+  document.addEventListener('stats-insert', e => {
+    const { x, y } = e.detail;
+    if (currentMode === 'stats') {
+      const expr = y ? `linReg(${x},${y})` : `mean(${x})`;
+      currentInput = expr;
+      cursorIndex = expr.length;
+      updateDisplayWithCursor();
+    }
   });
 
   // Header buttons
@@ -150,13 +199,27 @@ function bindEvents() {
   document
     .getElementById('constants-toggle')
     .addEventListener('click', () => panelManager.toggle('constants'));
+  document.getElementById('variables-toggle').addEventListener('click', () => {
+    varsPanelMgr.render();
+    panelManager.toggle('variables');
+  });
   document
     .getElementById('table-toggle')
     .addEventListener('click', () => panelManager.toggle('table'));
   document
+    .getElementById('spreadsheet-toggle')
+    .addEventListener('click', () => panelManager.toggle('spreadsheet'));
+  document
+    .getElementById('spreadsheet-close')
+    ?.addEventListener('click', () => panelManager.toggle('spreadsheet'));
+  document
+    .getElementById('spreadsheet-clear')
+    ?.addEventListener('click', () => spreadsheetMgr.clearAll());
+  document
     .getElementById('settings-toggle')
     .addEventListener('click', () => panelManager.toggle('settings'));
   document.getElementById('theme-toggle').addEventListener('click', () => toggleTheme());
+  document.getElementById('undo-btn').addEventListener('click', () => handleUndo());
   document
     .getElementById('help-toggle')
     ?.addEventListener('click', () => panelManager.toggle('help'));
@@ -166,8 +229,17 @@ function bindEvents() {
   document
     .getElementById('history-close')
     ?.addEventListener('click', () => panelManager.toggle('history'));
+  document
+    .getElementById('variables-close')
+    ?.addEventListener('click', () => panelManager.toggle('variables'));
   document.getElementById('fraction-toggle').addEventListener('click', () => {
     setFractionMode(!getFractionMode());
+    settingsManager.updateUI();
+    settingsManager.save();
+    recalculateCurrent();
+  });
+  document.getElementById('exact-toggle').addEventListener('click', () => {
+    setExactMode(!getExactMode());
     settingsManager.updateUI();
     settingsManager.save();
     recalculateCurrent();
@@ -186,6 +258,26 @@ function bindEvents() {
 
   // Copy result
   document.getElementById('copy-result').addEventListener('click', () => copyResult(lastResult));
+
+  // QR code
+  const qrModal = document.getElementById('qr-modal');
+  const qrImage = document.getElementById('qr-image');
+  const qrText = document.getElementById('qr-text');
+  document.getElementById('qr-btn').addEventListener('click', () => {
+    const text = lastResult || '0';
+    const dataUrl = qrToDataURL(text);
+    if (dataUrl && qrImage && qrText) {
+      qrImage.src = dataUrl;
+      qrText.textContent = text;
+      qrModal.style.display = 'flex';
+    }
+  });
+  document.getElementById('qr-close')?.addEventListener('click', () => {
+    qrModal.style.display = 'none';
+  });
+  qrModal?.addEventListener('click', e => {
+    if (e.target === qrModal) qrModal.style.display = 'none';
+  });
 
   // Settings controls
   let precisionSaveTimeout = null;
@@ -214,8 +306,64 @@ function bindEvents() {
     recalculateCurrent();
   });
 
+  document.getElementById('exact-toggle-setting').addEventListener('click', () => {
+    setExactMode(!getExactMode());
+    settingsManager.updateUI();
+    settingsManager.save();
+    recalculateCurrent();
+  });
+
+  // Fraction type buttons
+  document.getElementById('fraction-type-improper').addEventListener('click', () => {
+    setFractionType('improper');
+    settingsManager.updateUI();
+    settingsManager.save();
+    recalculateCurrent();
+  });
+  document.getElementById('fraction-type-mixed').addEventListener('click', () => {
+    setFractionType('mixed');
+    settingsManager.updateUI();
+    settingsManager.save();
+    recalculateCurrent();
+  });
+
+  // Language buttons
+  document.getElementById('lang-zh').addEventListener('click', () => {
+    setLanguage('zh');
+    settingsManager.updateUI();
+    settingsManager.save();
+  });
+  document.getElementById('lang-en').addEventListener('click', () => {
+    setLanguage('en');
+    settingsManager.updateUI();
+    settingsManager.save();
+  });
+
+  // Decimal separator buttons
+  document.getElementById('decimal-dot').addEventListener('click', () => {
+    setDecimalSeparator('.');
+    settingsManager.updateUI();
+    settingsManager.save();
+    recalculateCurrent();
+  });
+  document.getElementById('decimal-comma').addEventListener('click', () => {
+    setDecimalSeparator(',');
+    settingsManager.updateUI();
+    settingsManager.save();
+    recalculateCurrent();
+  });
+
+  // Thousand separator toggle
+  document.getElementById('thousand-sep-toggle').addEventListener('click', () => {
+    setThousandSeparator(!getThousandSeparator());
+    settingsManager.updateUI();
+    settingsManager.save();
+    recalculateCurrent();
+  });
+
   // Format buttons
-  document.getElementById('format-norm').addEventListener('click', () => setFormat('norm'));
+  document.getElementById('format-norm1').addEventListener('click', () => setFormat('norm1'));
+  document.getElementById('format-norm2').addEventListener('click', () => setFormat('norm2'));
   document.getElementById('format-fix').addEventListener('click', () => setFormat('fix'));
   document.getElementById('format-sci').addEventListener('click', () => setFormat('sci'));
 
@@ -244,6 +392,7 @@ function setBase(base) {
 }
 
 function insertText(text) {
+  pushUndo();
   const insertValue = getHelperText(text);
   currentInput = currentInput.slice(0, cursorIndex) + insertValue + currentInput.slice(cursorIndex);
   cursorIndex += insertValue.length;
@@ -252,6 +401,7 @@ function insertText(text) {
 
 function handleBackspace() {
   if (cursorIndex > 0) {
+    pushUndo();
     currentInput = currentInput.slice(0, cursorIndex - 1) + currentInput.slice(cursorIndex);
     cursorIndex--;
   }
@@ -259,6 +409,7 @@ function handleBackspace() {
 }
 
 function handleClear() {
+  if (currentInput) pushUndo();
   currentInput = '';
   lastResult = '0';
   cursorIndex = 0;

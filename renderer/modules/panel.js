@@ -8,6 +8,8 @@ export class PanelManager {
     this.settingsPanel = document.getElementById('settings-panel');
     this.tablePanel = document.getElementById('table-panel');
     this.helpPanel = document.getElementById('help-sidebar');
+    this.variablesPanel = document.getElementById('variables-sidebar');
+    this.spreadsheetPanel = document.getElementById('spreadsheet-panel');
     this.overlay = document.getElementById('overlay');
 
     this.overlay?.addEventListener('click', () => this.closeAll());
@@ -54,6 +56,8 @@ export class PanelManager {
     this.settingsPanel?.classList.remove('open');
     this.tablePanel?.classList.remove('open');
     this.helpPanel?.classList.remove('open');
+    this.variablesPanel?.classList.remove('open');
+    this.spreadsheetPanel?.classList.remove('open');
     this.overlay?.classList.remove('show');
 
     if (this.lastTrigger && typeof this.lastTrigger.focus === 'function') {
@@ -98,6 +102,10 @@ export class PanelManager {
         return this.tablePanel;
       case 'help':
         return this.helpPanel;
+      case 'variables':
+        return this.variablesPanel;
+      case 'spreadsheet':
+        return this.spreadsheetPanel;
       default:
         return null;
     }
