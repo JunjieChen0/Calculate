@@ -971,3 +971,146 @@ describe('Custom functions - extended', () => {
     expect(result.result).toBe('11');
   });
 });
+
+// ── Phase 5: 边界情况补充测试 ──
+
+describe('Table generation edge cases', () => {
+  it('throws for step=0', () => {
+    expect(() => generateTable('x', 0, 3, 0)).toThrow('表格参数无效');
+  });
+
+  it('handles start > end with positive step (empty)', () => {
+    const table = generateTable('x', 5, 0, 1);
+    expect(table.length).toBe(0);
+  });
+
+  it('handles negative step', () => {
+    const table = generateTable('x', 3, 0, -1);
+    expect(table.length).toBe(4);
+    expect(table[0].x).toBe(3);
+  });
+
+  it('handles fractional step', () => {
+    const table = generateTable('x^2', 0, 1, 0.5);
+    expect(table.length).toBe(3);
+    expect(table[1].x).toBe(0.5);
+  });
+});
+
+describe('solve4 edge cases', () => {
+  it('handles complex roots x^4+1=0', () => {
+    const result = evaluateExpression('solve4(1,0,0,0,1)', 'solve');
+    expect(result.success).toBe(true);
+  });
+
+  it('handles repeated roots (x-1)^4=0', () => {
+    const result = evaluateExpression('solve4(1,-4,6,-4,1)', 'solve');
+    expect(result.success).toBe(true);
+    expect(result.result).toContain('1');
+  });
+});
+
+describe('invNorm boundary', () => {
+  it('invNorm near 0 fails gracefully', () => {
+    const result = evaluateExpression('invNorm(0,0,1)', 'stats');
+    expect(result.success).toBe(false);
+  });
+
+  it('invNorm near 1 fails gracefully', () => {
+    const result = evaluateExpression('invNorm(1,0,1)', 'stats');
+    expect(result.success).toBe(false);
+  });
+
+  it('invNorm with negative sigma fails', () => {
+    const result = evaluateExpression('invNorm(0.5,0,-1)', 'stats');
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('Factorial overflow', () => {
+  it('handles 170! (max safe)', () => {
+    const result = evaluateExpression('170!');
+    expect(result.success).toBe(true);
+  });
+
+  it('171! returns Infinity (overflow)', () => {
+    const result = evaluateExpression('171!');
+    expect(result.success).toBe(true);
+    expect(result.result).toBe('∞');
+  });
+});
+
+describe('Matrix edge cases', () => {
+  it('handles singular matrix inverse', () => {
+    const result = evaluateExpression('inv([[1,2],[2,4]])', 'matrix');
+    expect(result.success).toBe(false);
+  });
+
+  it('calculates 4x4 determinant', () => {
+    const result = evaluateExpression('det([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])', 'matrix');
+    expect(result.success).toBe(true);
+    expect(result.result).toBe('1');
+  });
+});
+
+describe('Base mode negative numbers', () => {
+  afterAll(() => {
+    setCurrentBase(10);
+  });
+
+  it('handles negative decimal in hex mode', () => {
+    setCurrentBase(16);
+    const result = evaluateExpression('-FF', 'base');
+    expect(result.success).toBe(true);
+    expect(result.result).toContain('-');
+  });
+});
+
+describe('Engineering notation large values', () => {
+  afterAll(() => {
+    setEngineeringNotation(false);
+  });
+
+  it('formats 1e9 with engineering notation', () => {
+    setEngineeringNotation(true);
+    const result = evaluateExpression('1000000000');
+    expect(result.result).toContain('G');
+  });
+});
+
+describe('Logarithm edge cases', () => {
+  it('log(1) = 0 (natural log)', () => {
+    const result = evaluateExpression('log(1)');
+    expect(result.success).toBe(true);
+    expect(parseFloat(result.result)).toBeCloseTo(0, 5);
+  });
+
+  it('log10(1) = 0', () => {
+    const result = evaluateExpression('log10(1)');
+    expect(result.success).toBe(true);
+    expect(parseFloat(result.result)).toBeCloseTo(0, 5);
+  });
+
+  it('log(e) = 1 (natural log)', () => {
+    const result = evaluateExpression('log(e)');
+    expect(result.success).toBe(true);
+    expect(parseFloat(result.result)).toBeCloseTo(1, 5);
+  });
+});
+
+describe('Power edge cases', () => {
+  it('0^0 = 1', () => {
+    const result = evaluateExpression('0^0');
+    expect(result.result).toBe('1');
+  });
+
+  it('(-2)^3 = -8', () => {
+    const result = evaluateExpression('(-2)^3');
+    expect(result.result).toBe('-8');
+  });
+
+  it('(-2)^0.5 returns complex', () => {
+    const result = evaluateExpression('(-2)^0.5');
+    expect(result.success).toBe(true);
+  });
+});

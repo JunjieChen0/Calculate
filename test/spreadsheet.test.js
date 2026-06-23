@@ -4,23 +4,37 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 const mockInputs = [];
 const mockDisplays = [];
 
+function createMockElement(tag) {
+  return {
+    tagName: tag,
+    className: '',
+    textContent: '',
+    dataset: {},
+    appendChild: vi.fn(),
+    style: {}
+  };
+}
+
+const mockTable = {
+  innerHTML: '',
+  querySelectorAll: selector => {
+    if (selector === '.ss-input') return mockInputs;
+    if (selector === '.ss-display') return mockDisplays;
+    return [];
+  },
+  addEventListener: vi.fn(),
+  appendChild: vi.fn()
+};
+
 vi.stubGlobal('document', {
   getElementById: id => {
     if (id === 'spreadsheet-panel') return { style: {} };
-    if (id === 'spreadsheet-table') {
-      return {
-        innerHTML: '',
-        querySelectorAll: selector => {
-          if (selector === '.ss-input') return mockInputs;
-          if (selector === '.ss-display') return mockDisplays;
-          return [];
-        },
-        addEventListener: vi.fn()
-      };
-    }
+    if (id === 'spreadsheet-table') return mockTable;
     if (id === 'spreadsheet-status') return { textContent: '' };
     return null;
-  }
+  },
+  createDocumentFragment: vi.fn(() => ({ appendChild: vi.fn() })),
+  createElement: vi.fn(tag => createMockElement(tag))
 });
 
 vi.stubGlobal(
@@ -85,13 +99,11 @@ describe('SpreadsheetManager', () => {
       expect(ss.getCellValue('C1')).toBe(25);
     });
 
-    it('handles division by zero gracefully', () => {
+    it('returns #ERR for division by zero', () => {
       ss.cells['A1'] = '10';
       ss.cells['B1'] = '0';
       ss.cells['C1'] = '=A1/B1';
-      // Should return Infinity which is a valid number
-      const val = ss.getCellValue('C1');
-      expect(typeof val).toBe('number');
+      expect(ss.getCellValue('C1')).toBe('#ERR');
     });
   });
 
@@ -172,6 +184,38 @@ describe('SpreadsheetManager', () => {
       ss.cells['A1'] = '=B1+1';
       ss.cells['B1'] = '5';
       expect(ss.getCellValue('A1')).toBe(6);
+    });
+  });
+
+  describe('Security - code injection prevention', () => {
+    it('rejects alert() injection', () => {
+      ss.cells['A1'] = '=alert(1)';
+      expect(ss.getCellValue('A1')).toBe('#ERR');
+    });
+
+    it('rejects constructor.constructor injection', () => {
+      ss.cells['A1'] = '=constructor.constructor("return this")()';
+      expect(ss.getCellValue('A1')).toBe('#ERR');
+    });
+
+    it('rejects eval injection', () => {
+      ss.cells['A1'] = '=eval("1+1")';
+      expect(ss.getCellValue('A1')).toBe('#ERR');
+    });
+
+    it('rejects process injection', () => {
+      ss.cells['A1'] = '=process.exit()';
+      expect(ss.getCellValue('A1')).toBe('#ERR');
+    });
+
+    it('rejects require injection', () => {
+      ss.cells['A1'] = '=require("fs")';
+      expect(ss.getCellValue('A1')).toBe('#ERR');
+    });
+
+    it('rejects template literal injection', () => {
+      ss.cells['A1'] = '=`test`';
+      expect(ss.getCellValue('A1')).toBe('#ERR');
     });
   });
 

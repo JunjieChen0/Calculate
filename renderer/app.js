@@ -43,33 +43,43 @@ import { StatsEditor } from './modules/stats-editor.js';
 import { VariablesPanelManager } from './modules/variables-panel.js';
 import { SpreadsheetManager } from './modules/spreadsheet.js';
 import { qrToDataURL } from './modules/qrcode.js';
+import { EventBus } from './core/event-bus.js';
+import { ReactiveState } from './core/state.js';
+import { errorHandler } from './core/errors.js';
 
-// DOM Elements
+// ── DOM Elements ──
 const helperPanel = document.getElementById('helper-panel');
 const angleToggle = document.getElementById('angle-toggle');
 
-// State
-let currentInput = '';
-let currentMode = 'standard';
-let lastResult = '0';
-let cursorIndex = 0;
+// ── 核心基础设施 ──
+const bus = new EventBus();
+const uiState = new ReactiveState({
+  currentInput: '',
+  currentMode: 'standard',
+  lastResult: '0',
+  cursorIndex: 0
+});
+
+// ── 撤销栈 ──
 const undoStack = [];
 const MAX_UNDO = 50;
 
 function pushUndo() {
-  undoStack.push({ input: currentInput, cursor: cursorIndex });
+  undoStack.push({
+    input: uiState.get('currentInput'),
+    cursor: uiState.get('cursorIndex')
+  });
   if (undoStack.length > MAX_UNDO) undoStack.shift();
 }
 
 function handleUndo() {
   if (undoStack.length === 0) return;
   const state = undoStack.pop();
-  currentInput = state.input;
-  cursorIndex = state.cursor;
+  uiState.batch({ currentInput: state.input, cursorIndex: state.cursor });
   updateDisplayWithCursor();
 }
 
-// Managers
+// ── Managers ──
 const store = createStore();
 const panelManager = new PanelManager();
 const settingsManager = new SettingsManager(store);
@@ -79,7 +89,7 @@ new TableManager();
 let varsPanelMgr;
 let spreadsheetMgr;
 
-// Initialization
+// ── Initialization ──
 async function init() {
   await initTheme(store);
   await initHistory(store);
@@ -91,7 +101,7 @@ async function init() {
   new HistoryPanelManager(handleHistorySelect);
   new HelpPanelManager();
   bindEvents();
-  renderHelperPanel(currentMode, helperPanel);
+  renderHelperPanel(uiState.get('currentMode'), helperPanel);
   updateBaseKeyboard(getCurrentBase());
   updateAngleButton();
   initKeyboard({
@@ -105,7 +115,7 @@ async function init() {
     onToggleTheme: () => toggleTheme(),
     onClearHistory: handleClearHistory,
     onAutoBracket: handleAutoBracket,
-    getCurrentMode: () => currentMode,
+    getCurrentMode: () => uiState.get('currentMode'),
     isPanelOpen: () => panelManager.activePanel !== null,
     closePanel: () => panelManager.closeAll(),
     onToggleHelp: () => panelManager.toggle('help'),
@@ -114,6 +124,7 @@ async function init() {
   updateDisplayWithCursor();
 }
 
+// ── Event Binding ──
 function bindEvents() {
   // Keypad buttons
   document.querySelectorAll('.key').forEach(button => {
@@ -157,23 +168,23 @@ function bindEvents() {
   // Memory buttons
   document.querySelectorAll('.memory-btn').forEach(button => {
     button.addEventListener('click', () => {
-      memoryManager.handleAction(button.dataset.memory, lastResult, insertText);
+      memoryManager.handleAction(button.dataset.memory, uiState.get('lastResult'), insertText);
     });
   });
 
   // Mode tabs
   document.querySelectorAll('.mode-tab').forEach(tab => {
     tab.addEventListener('click', () => {
-      setActiveModeTab(tab.dataset.mode);
-      currentMode = tab.dataset.mode;
-      currentInput = '';
-      cursorIndex = 0;
+      const newMode = tab.dataset.mode;
+      setActiveModeTab(newMode);
+      uiState.batch({ currentMode: newMode, currentInput: '', cursorIndex: 0 });
       clearError();
-      renderHelperPanel(currentMode, helperPanel);
+      renderHelperPanel(newMode, helperPanel);
       updateBaseKeyboard(getCurrentBase());
-      updateDisplay(currentInput, lastResult);
+      updateDisplay(uiState.get('currentInput'), uiState.get('lastResult'));
+      bus.emit('mode-changed', newMode);
       // 显示/隐藏统计编辑器
-      if (currentMode === 'stats') {
+      if (newMode === 'stats') {
         statsEditor.show();
       } else {
         statsEditor.hide();
@@ -184,10 +195,9 @@ function bindEvents() {
   // Stats editor insert event
   document.addEventListener('stats-insert', e => {
     const { x, y } = e.detail;
-    if (currentMode === 'stats') {
+    if (uiState.get('currentMode') === 'stats') {
       const expr = y ? `linReg(${x},${y})` : `mean(${x})`;
-      currentInput = expr;
-      cursorIndex = expr.length;
+      uiState.batch({ currentInput: expr, cursorIndex: expr.length });
       updateDisplayWithCursor();
     }
   });
@@ -257,14 +267,16 @@ function bindEvents() {
     .addEventListener('click', () => panelManager.toggle('table'));
 
   // Copy result
-  document.getElementById('copy-result').addEventListener('click', () => copyResult(lastResult));
+  document
+    .getElementById('copy-result')
+    .addEventListener('click', () => copyResult(uiState.get('lastResult')));
 
   // QR code
   const qrModal = document.getElementById('qr-modal');
   const qrImage = document.getElementById('qr-image');
   const qrText = document.getElementById('qr-text');
   document.getElementById('qr-btn').addEventListener('click', () => {
-    const text = lastResult || '0';
+    const text = uiState.get('lastResult') || '0';
     const dataUrl = qrToDataURL(text);
     if (dataUrl && qrImage && qrText) {
       qrImage.src = dataUrl;
@@ -386,7 +398,7 @@ function setBase(base) {
   settingsManager.save();
   settingsManager.updateUI();
   updateBaseKeyboard(base);
-  if (currentMode === 'base') {
+  if (uiState.get('currentMode') === 'base') {
     recalculateCurrent();
   }
 }
@@ -394,52 +406,60 @@ function setBase(base) {
 function insertText(text) {
   pushUndo();
   const insertValue = getHelperText(text);
-  currentInput = currentInput.slice(0, cursorIndex) + insertValue + currentInput.slice(cursorIndex);
-  cursorIndex += insertValue.length;
+  const currentInput = uiState.get('currentInput');
+  const cursorIndex = uiState.get('cursorIndex');
+  const newInput =
+    currentInput.slice(0, cursorIndex) + insertValue + currentInput.slice(cursorIndex);
+  uiState.batch({ currentInput: newInput, cursorIndex: cursorIndex + insertValue.length });
   updateDisplayWithCursor();
 }
 
 function handleBackspace() {
+  const cursorIndex = uiState.get('cursorIndex');
   if (cursorIndex > 0) {
     pushUndo();
-    currentInput = currentInput.slice(0, cursorIndex - 1) + currentInput.slice(cursorIndex);
-    cursorIndex--;
+    const currentInput = uiState.get('currentInput');
+    const newInput = currentInput.slice(0, cursorIndex - 1) + currentInput.slice(cursorIndex);
+    uiState.batch({ currentInput: newInput, cursorIndex: cursorIndex - 1 });
   }
   updateDisplayWithCursor();
 }
 
 function handleClear() {
-  if (currentInput) pushUndo();
-  currentInput = '';
-  lastResult = '0';
-  cursorIndex = 0;
+  if (uiState.get('currentInput')) pushUndo();
+  uiState.batch({ currentInput: '', lastResult: '0', cursorIndex: 0 });
   clearError();
   updateDisplayWithCursor();
 }
 
 function moveCursorLeft() {
+  const cursorIndex = uiState.get('cursorIndex');
   if (cursorIndex > 0) {
-    cursorIndex--;
+    uiState.set('cursorIndex', cursorIndex - 1);
     updateDisplayWithCursor();
   }
 }
 
 function moveCursorRight() {
+  const cursorIndex = uiState.get('cursorIndex');
+  const currentInput = uiState.get('currentInput');
   if (cursorIndex < currentInput.length) {
-    cursorIndex++;
+    uiState.set('cursorIndex', cursorIndex + 1);
     updateDisplayWithCursor();
   }
 }
 
 function handleAutoBracket() {
   if (settingsManager.getAutoBracketEnabled()) {
-    currentInput = autoCompleteBrackets(currentInput);
-    cursorIndex = currentInput.length;
+    const currentInput = uiState.get('currentInput');
+    const newInput = autoCompleteBrackets(currentInput);
+    uiState.batch({ currentInput: newInput, cursorIndex: newInput.length });
     updateDisplayWithCursor();
   }
 }
 
 function handleCalculate() {
+  const currentInput = uiState.get('currentInput');
   if (!currentInput.trim()) {
     return;
   }
@@ -447,32 +467,33 @@ function handleCalculate() {
   let expr = currentInput;
   if (settingsManager.getAutoBracketEnabled()) {
     expr = autoCompleteBrackets(expr);
-    currentInput = expr;
-    cursorIndex = currentInput.length;
+    uiState.batch({ currentInput: expr, cursorIndex: expr.length });
   }
 
-  const result = evaluateExpression(expr, currentMode);
+  const result = evaluateExpression(expr, uiState.get('currentMode'));
 
   if (result.success) {
-    lastResult = result.result;
-    setAns(lastResult);
+    const resultStr = result.result;
+    uiState.set('lastResult', resultStr);
+    setAns(resultStr);
     clearError();
-    addHistory({ expression: expr, result: lastResult, mode: currentMode });
+    addHistory({ expression: expr, result: resultStr, mode: uiState.get('currentMode') });
+    bus.emit('calculated', { expression: expr, result: resultStr });
+    uiState.batch({ currentInput: resultStr, cursorIndex: resultStr.length });
+    updateDisplayWithCursor();
   } else {
-    setError(result.error);
+    const handled = errorHandler.handle(new Error(result.error));
+    setError(handled.error);
     return;
   }
-
-  currentInput = lastResult;
-  cursorIndex = currentInput.length;
-  updateDisplayWithCursor();
 }
 
 function recalculateCurrent() {
+  const currentInput = uiState.get('currentInput');
   if (currentInput.trim()) {
-    const result = evaluateExpression(currentInput, currentMode);
+    const result = evaluateExpression(currentInput, uiState.get('currentMode'));
     if (result.success) {
-      lastResult = result.result;
+      uiState.set('lastResult', result.result);
       clearError();
     } else {
       // Suppress error for incomplete expressions (user still typing)
@@ -482,7 +503,8 @@ function recalculateCurrent() {
           trimmed
         );
       if (!isIncomplete) {
-        setError(result.error);
+        const handled = errorHandler.handle(new Error(result.error));
+        setError(handled.error);
       } else {
         clearError();
       }
@@ -492,7 +514,7 @@ function recalculateCurrent() {
 }
 
 function updateDisplayWithCursor() {
-  updateDisplay(currentInput, lastResult, cursorIndex);
+  updateDisplay(uiState.get('currentInput'), uiState.get('lastResult'), uiState.get('cursorIndex'));
 }
 
 function cycleAngleUnit() {
@@ -511,12 +533,14 @@ function updateAngleButton() {
 }
 
 function handleHistorySelect(historyItem) {
-  currentInput = historyItem.expression;
-  cursorIndex = currentInput.length;
-  currentMode = historyItem.mode || 'standard';
-  lastResult = historyItem.result || '0';
-  setActiveModeTab(currentMode);
-  renderHelperPanel(currentMode, helperPanel);
+  uiState.batch({
+    currentInput: historyItem.expression,
+    cursorIndex: historyItem.expression.length,
+    currentMode: historyItem.mode || 'standard',
+    lastResult: historyItem.result || '0'
+  });
+  setActiveModeTab(uiState.get('currentMode'));
+  renderHelperPanel(uiState.get('currentMode'), helperPanel);
   updateBaseKeyboard(getCurrentBase());
   updateDisplayWithCursor();
   panelManager.toggle('history');
@@ -528,7 +552,11 @@ function handleClearHistory() {
   }
 }
 
-// Start the app
+// ── 导出给其他模块使用 ──
+export { bus, uiState };
+
+// ── Start the app ──
 init().catch(error => {
-  console.error('Failed to initialize app:', error);
+  const handled = errorHandler.handle(error);
+  console.error('Failed to initialize app:', handled.error);
 });

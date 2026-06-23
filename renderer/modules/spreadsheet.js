@@ -2,6 +2,159 @@ const NUM_COLS = 5;
 const NUM_ROWS = 20;
 const COL_LABELS = ['A', 'B', 'C', 'D', 'E'];
 
+/**
+ * 安全的算术表达式求值器（递归下降解析器）
+ * 仅支持：数字、+ - * / ^、括号，不允许任何代码执行
+ */
+function safeArithmeticEval(input) {
+  const src = String(input).trim();
+  if (src.length === 0) return 0;
+  // 仅允许数字、运算符、括号、小数点、空白
+  if (!/^[\d\s+\-*/^().eE]+$/.test(src)) {
+    throw new Error('表达式包含非法字符');
+  }
+  let pos = 0;
+
+  function peek() {
+    while (pos < src.length && src[pos] === ' ') pos++;
+    return pos < src.length ? src[pos] : null;
+  }
+
+  function consume() {
+    const ch = peek();
+    if (ch !== null) pos++;
+    return ch;
+  }
+
+  function parseNumber() {
+    const start = pos;
+    while (pos < src.length && src[pos] === ' ') pos++;
+    if (pos >= src.length) throw new Error('意外的表达式结尾');
+
+    let hasDigits = false;
+    const numStart = pos;
+
+    // 处理正负号
+    if (src[pos] === '+' || src[pos] === '-') pos++;
+
+    // 整数部分
+    while (pos < src.length && src[pos] >= '0' && src[pos] <= '9') {
+      hasDigits = true;
+      pos++;
+    }
+
+    // 小数部分
+    if (pos < src.length && src[pos] === '.') {
+      pos++;
+      while (pos < src.length && src[pos] >= '0' && src[pos] <= '9') {
+        hasDigits = true;
+        pos++;
+      }
+    }
+
+    // 科学计数法
+    if (pos < src.length && (src[pos] === 'e' || src[pos] === 'E')) {
+      pos++;
+      if (pos < src.length && (src[pos] === '+' || src[pos] === '-')) pos++;
+      while (pos < src.length && src[pos] >= '0' && src[pos] <= '9') pos++;
+    }
+
+    if (!hasDigits) {
+      pos = start;
+      throw new Error('期望数字');
+    }
+
+    const num = parseFloat(src.slice(numStart, pos));
+    if (!Number.isFinite(num)) throw new Error('数值溢出');
+    return num;
+  }
+
+  // expr = term (('+' | '-') term)*
+  function parseExpr() {
+    let result = parseTerm();
+    while (true) {
+      const ch = peek();
+      if (ch === '+') {
+        consume();
+        result += parseTerm();
+      } else if (ch === '-') {
+        consume();
+        result -= parseTerm();
+      } else {
+        break;
+      }
+    }
+    return result;
+  }
+
+  // term = power (('*' | '/') power)*
+  function parseTerm() {
+    let result = parsePower();
+    while (true) {
+      const ch = peek();
+      if (ch === '*') {
+        consume();
+        result *= parsePower();
+      } else if (ch === '/') {
+        consume();
+        const divisor = parsePower();
+        if (divisor === 0) throw new Error('除零错误');
+        result /= divisor;
+      } else {
+        break;
+      }
+    }
+    return result;
+  }
+
+  // power = unary ('^' unary)*
+  function parsePower() {
+    let result = parseUnary();
+    if (peek() === '^') {
+      consume();
+      const exp = parsePower(); // 右结合
+      result = Math.pow(result, exp);
+    }
+    return result;
+  }
+
+  // unary = ('-' | '+') unary | primary
+  function parseUnary() {
+    const ch = peek();
+    if (ch === '-') {
+      consume();
+      return -parseUnary();
+    }
+    if (ch === '+') {
+      consume();
+      return parseUnary();
+    }
+    return parsePrimary();
+  }
+
+  // primary = number | '(' expr ')'
+  function parsePrimary() {
+    const ch = peek();
+    if (ch === '(') {
+      consume();
+      const result = parseExpr();
+      if (peek() !== ')') throw new Error('括号不匹配');
+      consume();
+      return result;
+    }
+    return parseNumber();
+  }
+
+  const result = parseExpr();
+  if (pos < src.length) {
+    const remaining = src.slice(pos).trim();
+    if (remaining.length > 0) {
+      throw new Error('表达式解析未完成');
+    }
+  }
+  return result;
+}
+
 export class SpreadsheetManager {
   constructor() {
     this.cells = {};
@@ -18,22 +171,54 @@ export class SpreadsheetManager {
   }
 
   renderGrid() {
-    let html = '<thead><tr><th class="ss-corner"></th>';
-    for (const label of COL_LABELS) {
-      html += `<th class="ss-col-header">${label}</th>`;
-    }
-    html += '</tr></thead><tbody>';
+    // 使用 DocumentFragment 批量构建 DOM，减少重排
+    const fragment = document.createDocumentFragment();
 
+    // thead
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    const corner = document.createElement('th');
+    corner.className = 'ss-corner';
+    headerRow.appendChild(corner);
+    for (const label of COL_LABELS) {
+      const th = document.createElement('th');
+      th.className = 'ss-col-header';
+      th.textContent = label;
+      headerRow.appendChild(th);
+    }
+    thead.appendChild(headerRow);
+    fragment.appendChild(thead);
+
+    // tbody
+    const tbody = document.createElement('tbody');
     for (let r = 1; r <= NUM_ROWS; r++) {
-      html += `<tr><td class="ss-row-header">${r}</td>`;
+      const tr = document.createElement('tr');
+      const rowHeader = document.createElement('td');
+      rowHeader.className = 'ss-row-header';
+      rowHeader.textContent = r;
+      tr.appendChild(rowHeader);
       for (let c = 0; c < NUM_COLS; c++) {
         const id = `${COL_LABELS[c]}${r}`;
-        html += `<td class="ss-cell" data-cell="${id}"><input type="text" class="ss-input" data-cell="${id}" value="" /><span class="ss-display" data-cell="${id}"></span></td>`;
+        const td = document.createElement('td');
+        td.className = 'ss-cell';
+        td.dataset.cell = id;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'ss-input';
+        input.dataset.cell = id;
+        const span = document.createElement('span');
+        span.className = 'ss-display';
+        span.dataset.cell = id;
+        td.appendChild(input);
+        td.appendChild(span);
+        tr.appendChild(td);
       }
-      html += '</tr>';
+      tbody.appendChild(tr);
     }
-    html += '</tbody>';
-    this.tableEl.innerHTML = html;
+    fragment.appendChild(tbody);
+
+    this.tableEl.innerHTML = '';
+    this.tableEl.appendChild(fragment);
 
     this.tableEl.addEventListener('input', e => {
       if (e.target.classList.contains('ss-input')) {
@@ -117,11 +302,8 @@ export class SpreadsheetManager {
         return String(this.getCellValue(id));
       });
 
-      // Replace ^ with ** for exponentiation (JS ^ is bitwise XOR)
-      expr = expr.replace(/\^/g, '**');
-
-      // Safe eval using Function constructor (no access to outer scope)
-      const result = Function(`"use strict"; return (${expr})`)();
+      // 使用安全的算术求值器（不允许任意代码执行）
+      const result = safeArithmeticEval(expr);
       return Number.isFinite(result) ? result : 0;
     } catch {
       return '#ERR';

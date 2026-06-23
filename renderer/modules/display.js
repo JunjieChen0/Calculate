@@ -4,10 +4,22 @@ const formulaPreview = document.getElementById('formula-preview');
 const resultDisplay = document.getElementById('result-display');
 const errorDisplay = document.getElementById('error-display');
 
-export function updateDisplay(currentInput, lastResult, cursorIndex = null) {
-  if (!formulaPreview || !resultDisplay) {
-    return;
-  }
+// ── rAF 节流：合并同帧内的多次渲染请求 ──
+let renderPending = false;
+let pendingInput = null;
+let pendingResult = null;
+let pendingCursor = null;
+
+function flushRender() {
+  renderPending = false;
+  doUpdateDisplay(pendingInput, pendingResult, pendingCursor);
+  pendingInput = null;
+  pendingResult = null;
+  pendingCursor = null;
+}
+
+function doUpdateDisplay(currentInput, lastResult, cursorIndex) {
+  if (!formulaPreview || !resultDisplay) return;
 
   if (!currentInput || currentInput.trim() === '') {
     if (!lastResult || lastResult === '0') {
@@ -27,6 +39,16 @@ export function updateDisplay(currentInput, lastResult, cursorIndex = null) {
 
   if (lastResult !== undefined && lastResult !== null) {
     renderResult(resultDisplay, String(lastResult));
+  }
+}
+
+export function updateDisplay(currentInput, lastResult, cursorIndex = null) {
+  pendingInput = currentInput;
+  pendingResult = lastResult;
+  pendingCursor = cursorIndex;
+  if (!renderPending) {
+    renderPending = true;
+    requestAnimationFrame(flushRender);
   }
 }
 

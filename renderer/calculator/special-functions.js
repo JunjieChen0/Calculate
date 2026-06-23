@@ -11,12 +11,51 @@ import { getAngleUnitSuffix } from './angle-utils.js';
 
 const math = create(all, { number: 'number', precision: 64 });
 
+// ── 预编译正则表达式（避免每次调用重新创建） ──
+const PATTERNS = Object.freeze({
+  ratio: /^\s*ratio\s*\(\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  verify: /^\s*verify\s*\(\s*(.+?),\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  dice: /^\s*dice\s*\(\s*(\d+)\s*\)\s*$/i,
+  coin: /^\s*coin\s*\(\s*(\d+)\s*\)\s*$/i,
+  polar: /^\s*polar\s*\(\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  rect: /^\s*rect\s*\(\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  deriv: /^\s*d\/dx\s*\(\s*(.+?),\s*([a-zA-Z]),\s*([^)]+)\s*\)\s*$/i,
+  integral: /^\s*integrate\s*\(\s*(.+?),\s*([a-zA-Z]),\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  sum: /^\s*sum\s*\(\s*(.+?),\s*([a-zA-Z]),\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  product: /^\s*product\s*\(\s*(.+?),\s*([a-zA-Z]),\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  gcd: /^\s*gcd\s*\(\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  lcm: /^\s*lcm\s*\(\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  factorize: /^\s*factorize\s*\(\s*([^)]+)\s*\)\s*$/i,
+  linReg: /^\s*linReg\s*\(\s*\[([^\]]+)\]\s*,\s*\[([^\]]+)\]\s*\)\s*$/i,
+  quadReg: /^\s*quadReg\s*\(\s*\[([^\]]+)\]\s*,\s*\[([^\]]+)\]\s*\)\s*$/i,
+  expReg: /^\s*expReg\s*\(\s*\[([^\]]+)\]\s*,\s*\[([^\]]+)\]\s*\)\s*$/i,
+  powerReg: /^\s*powerReg\s*\(\s*\[([^\]]+)\]\s*,\s*\[([^\]]+)\]\s*\)\s*$/i,
+  logReg: /^\s*logReg\s*\(\s*\[([^\]]+)\]\s*,\s*\[([^\]]+)\]\s*\)\s*$/i,
+  logisticReg: /^\s*logisticReg\s*\(\s*\[([^\]]+)\]\s*,\s*\[([^\]]+)\]\s*\)\s*$/i,
+  normCDF: /^\s*normCDF\s*\(\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  binomPMF: /^\s*binomPMF\s*\(\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  poissonPMF: /^\s*poissonPMF\s*\(\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  binomCDF: /^\s*binomCDF\s*\(\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  poissonCDF: /^\s*poissonCDF\s*\(\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  invNorm: /^\s*invNorm\s*\(\s*([^,)]+)(?:,\s*([^,)]+))?(?:,\s*([^)]+))?\s*\)\s*$/i,
+  ineq6:
+    /^\s*solveIneq\s*\(\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  ineq5: /^\s*solveIneq\s*\(\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  ineq4: /^\s*solveIneq\s*\(\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  toDMS: /^\s*toDMS\s*\(\s*([^)]+)\s*\)\s*$/i,
+  toDecimal: /^\s*toDecimal\s*\(\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  uniformPDF: /^\s*uniformPDF\s*\(\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  uniformCDF: /^\s*uniformCDF\s*\(\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  expPDF: /^\s*expPDF\s*\(\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  expCDF: /^\s*expCDF\s*\(\s*([^,]+),\s*([^)]+)\s*\)\s*$/i
+});
+
 /**
  * 处理特殊函数调用
  */
 export function handleSpecialFunctions(expr) {
   // Ratio: ratio(a,b,c) solves a:b = c:x for x
-  const ratioMatch = expr.match(/ratio\s*\(\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)/i);
+  const ratioMatch = expr.match(PATTERNS.ratio);
   if (ratioMatch) {
     const a = Number(ratioMatch[1].trim());
     const b = Number(ratioMatch[2].trim());
@@ -28,7 +67,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Verify: verify(lhs, rhs, val) - substitute val for ? in lhs and rhs, then compare
-  const verifyMatch = expr.match(/verify\s*\(\s*(.+?),\s*([^,]+),\s*([^)]+)\s*\)/i);
+  const verifyMatch = expr.match(PATTERNS.verify);
   if (verifyMatch) {
     const lhsExpr = verifyMatch[1].trim();
     const rhsExpr = verifyMatch[2].trim();
@@ -46,7 +85,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Dice simulation: dice(n) - roll n dice, show results and frequencies
-  const diceMatch = expr.match(/^dice\s*\(\s*(\d+)\s*\)$/i);
+  const diceMatch = expr.match(PATTERNS.dice);
   if (diceMatch) {
     const n = Math.min(Math.max(parseInt(diceMatch[1]), 1), 100);
     const rolls = Array.from({ length: n }, () => Math.floor(Math.random() * 6) + 1);
@@ -57,7 +96,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Coin simulation: coin(n) - flip n coins, show H/T results and counts
-  const coinMatch = expr.match(/^coin\s*\(\s*(\d+)\s*\)$/i);
+  const coinMatch = expr.match(PATTERNS.coin);
   if (coinMatch) {
     const n = Math.min(Math.max(parseInt(coinMatch[1]), 1), 100);
     const flips = Array.from({ length: n }, () => (Math.random() < 0.5 ? 'H' : 'T'));
@@ -67,7 +106,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Polar form: polar(re, im) => (r, θ)
-  const polarMatch = expr.match(/polar\s*\(\s*([^,]+),\s*([^)]+)\s*\)/i);
+  const polarMatch = expr.match(PATTERNS.polar);
   if (polarMatch) {
     const re = Number(polarMatch[1].trim());
     const im = Number(polarMatch[2].trim());
@@ -85,7 +124,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Rectangular form: rect(r, theta) => re + im*i
-  const rectMatch = expr.match(/rect\s*\(\s*([^,]+),\s*([^)]+)\s*\)/i);
+  const rectMatch = expr.match(PATTERNS.rect);
   if (rectMatch) {
     const r = Number(rectMatch[1].trim());
     let theta = Number(rectMatch[2].trim());
@@ -103,7 +142,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Calculus: d/dx(f(x), x, point) - numerical derivative
-  const derivMatch = expr.match(/d\/dx\s*\(\s*(.+?),\s*([a-zA-Z]),\s*([^)]+)\s*\)/i);
+  const derivMatch = expr.match(PATTERNS.deriv);
   if (derivMatch) {
     const funcExpr = derivMatch[1].trim();
     const variable = derivMatch[2].trim();
@@ -115,9 +154,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Integral: integrate(f(x), x, a, b) - numerical integration
-  const integralMatch = expr.match(
-    /integrate\s*\(\s*(.+?),\s*([a-zA-Z]),\s*([^,]+),\s*([^)]+)\s*\)/i
-  );
+  const integralMatch = expr.match(PATTERNS.integral);
   if (integralMatch) {
     const funcExpr = integralMatch[1].trim();
     const variable = integralMatch[2].trim();
@@ -130,7 +167,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Summation: sum(f(i), i, start, end)
-  const sumMatch = expr.match(/sum\s*\(\s*(.+?),\s*([a-zA-Z]),\s*([^,]+),\s*([^)]+)\s*\)/i);
+  const sumMatch = expr.match(PATTERNS.sum);
   if (sumMatch) {
     const funcExpr = sumMatch[1].trim();
     const variable = sumMatch[2].trim();
@@ -143,7 +180,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Product: product(f(i), i, start, end)
-  const prodMatch = expr.match(/product\s*\(\s*(.+?),\s*([a-zA-Z]),\s*([^,]+),\s*([^)]+)\s*\)/i);
+  const prodMatch = expr.match(PATTERNS.product);
   if (prodMatch) {
     const funcExpr = prodMatch[1].trim();
     const variable = prodMatch[2].trim();
@@ -156,7 +193,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // GCD: gcd(a, b)
-  const gcdMatch = expr.match(/gcd\s*\(\s*([^,]+),\s*([^)]+)\s*\)/i);
+  const gcdMatch = expr.match(PATTERNS.gcd);
   if (gcdMatch) {
     const a = Number(gcdMatch[1].trim());
     const b = Number(gcdMatch[2].trim());
@@ -167,7 +204,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // LCM: lcm(a, b)
-  const lcmMatch = expr.match(/lcm\s*\(\s*([^,]+),\s*([^)]+)\s*\)/i);
+  const lcmMatch = expr.match(PATTERNS.lcm);
   if (lcmMatch) {
     const a = Number(lcmMatch[1].trim());
     const b = Number(lcmMatch[2].trim());
@@ -178,7 +215,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Factorize: factorize(n)
-  const factorMatch = expr.match(/factorize\s*\(\s*([^)]+)\s*\)/i);
+  const factorMatch = expr.match(PATTERNS.factorize);
   if (factorMatch) {
     const n = Number(factorMatch[1].trim());
     if (isNaN(n) || !Number.isInteger(n) || n < 2) {
@@ -188,7 +225,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Linear regression: linReg([x1,x2,...], [y1,y2,...])
-  const linRegMatch = expr.match(/linReg\s*\(\s*\[([^\]]+)\]\s*,\s*\[([^\]]+)\]\s*\)/i);
+  const linRegMatch = expr.match(PATTERNS.linReg);
   if (linRegMatch) {
     const xData = linRegMatch[1].split(',').map(Number);
     const yData = linRegMatch[2].split(',').map(Number);
@@ -199,7 +236,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Quadratic regression: quadReg([x1,x2,...], [y1,y2,...])
-  const quadRegMatch = expr.match(/quadReg\s*\(\s*\[([^\]]+)\]\s*,\s*\[([^\]]+)\]\s*\)/i);
+  const quadRegMatch = expr.match(PATTERNS.quadReg);
   if (quadRegMatch) {
     const xData = quadRegMatch[1].split(',').map(Number);
     const yData = quadRegMatch[2].split(',').map(Number);
@@ -210,7 +247,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Exponential regression: expReg([x1,x2,...], [y1,y2,...])
-  const expRegMatch = expr.match(/expReg\s*\(\s*\[([^\]]+)\]\s*,\s*\[([^\]]+)\]\s*\)/i);
+  const expRegMatch = expr.match(PATTERNS.expReg);
   if (expRegMatch) {
     const xData = expRegMatch[1].split(',').map(Number);
     const yData = expRegMatch[2].split(',').map(Number);
@@ -226,7 +263,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Power regression: powerReg([x1,x2,...], [y1,y2,...])
-  const powerRegMatch = expr.match(/powerReg\s*\(\s*\[([^\]]+)\]\s*,\s*\[([^\]]+)\]\s*\)/i);
+  const powerRegMatch = expr.match(PATTERNS.powerReg);
   if (powerRegMatch) {
     const xData = powerRegMatch[1].split(',').map(Number);
     const yData = powerRegMatch[2].split(',').map(Number);
@@ -243,7 +280,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Logarithmic regression: logReg([x1,x2,...], [y1,y2,...])
-  const logRegMatch = expr.match(/logReg\s*\(\s*\[([^\]]+)\]\s*,\s*\[([^\]]+)\]\s*\)/i);
+  const logRegMatch = expr.match(PATTERNS.logReg);
   if (logRegMatch) {
     const xData = logRegMatch[1].split(',').map(Number);
     const yData = logRegMatch[2].split(',').map(Number);
@@ -259,7 +296,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Logistic regression: logisticReg([x1,x2,...], [y1,y2,...])
-  const logisticRegMatch = expr.match(/logisticReg\s*\(\s*\[([^\]]+)\]\s*,\s*\[([^\]]+)\]\s*\)/i);
+  const logisticRegMatch = expr.match(PATTERNS.logisticReg);
   if (logisticRegMatch) {
     const xData = logisticRegMatch[1].split(',').map(Number);
     const yData = logisticRegMatch[2].split(',').map(Number);
@@ -270,7 +307,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Normal CDF: normCDF(x, mu, sigma)
-  const normCDFMatch = expr.match(/normCDF\s*\(\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)/i);
+  const normCDFMatch = expr.match(PATTERNS.normCDF);
   if (normCDFMatch) {
     const x = Number(normCDFMatch[1].trim());
     const mu = Number(normCDFMatch[2].trim());
@@ -282,7 +319,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Binomial PMF: binomPMF(k, n, p)
-  const binomPMFMatch = expr.match(/binomPMF\s*\(\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)/i);
+  const binomPMFMatch = expr.match(PATTERNS.binomPMF);
   if (binomPMFMatch) {
     const k = Number(binomPMFMatch[1].trim());
     const n = Number(binomPMFMatch[2].trim());
@@ -302,7 +339,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Poisson PMF: poissonPMF(k, lambda)
-  const poissonPMFMatch = expr.match(/poissonPMF\s*\(\s*([^,]+),\s*([^)]+)\s*\)/i);
+  const poissonPMFMatch = expr.match(PATTERNS.poissonPMF);
   if (poissonPMFMatch) {
     const k = Number(poissonPMFMatch[1].trim());
     const lambda = Number(poissonPMFMatch[2].trim());
@@ -313,7 +350,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Binomial CDF: binomCDF(k, n, p)
-  const binomCDFMatch = expr.match(/binomCDF\s*\(\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)/i);
+  const binomCDFMatch = expr.match(PATTERNS.binomCDF);
   if (binomCDFMatch) {
     const k = Number(binomCDFMatch[1].trim());
     const n = Number(binomCDFMatch[2].trim());
@@ -333,7 +370,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Poisson CDF: poissonCDF(k, lambda)
-  const poissonCDFMatch = expr.match(/poissonCDF\s*\(\s*([^,]+),\s*([^)]+)\s*\)/i);
+  const poissonCDFMatch = expr.match(PATTERNS.poissonCDF);
   if (poissonCDFMatch) {
     const k = Number(poissonCDFMatch[1].trim());
     const lambda = Number(poissonCDFMatch[2].trim());
@@ -344,7 +381,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Inverse Normal CDF: invNorm(p, mu, sigma)
-  const invNormMatch = expr.match(/invNorm\s*\(\s*([^,)]+)(?:,\s*([^,)]+))?(?:,\s*([^)]+))?\s*\)/i);
+  const invNormMatch = expr.match(PATTERNS.invNorm);
   if (invNormMatch) {
     const p = Number(invNormMatch[1].trim());
     const mu = invNormMatch[2] !== undefined ? Number(invNormMatch[2].trim()) : 0;
@@ -356,25 +393,21 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Inequality solving: solveIneq(a, b, c, op) / solveIneq(a, b, c, d, op) / solveIneq(a, b, c, d, e, op)
-  const ineqMatch4 = expr.match(
-    /solveIneq\s*\(\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)/i
-  );
+  const ineqMatch4 = expr.match(PATTERNS.ineq6);
   if (ineqMatch4) {
     const params = ineqMatch4.slice(1, 6).map(s => Number(s.trim()));
     const op = ineqMatch4[6].trim().replace(/['"]/g, '');
     if (params.some(isNaN)) throw new Error('不等式参数无效');
     return solveGeneralInequality(params, op);
   }
-  const ineqMatch3 = expr.match(
-    /solveIneq\s*\(\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)/i
-  );
+  const ineqMatch3 = expr.match(PATTERNS.ineq5);
   if (ineqMatch3) {
     const params = ineqMatch3.slice(1, 5).map(s => Number(s.trim()));
     const op = ineqMatch3[5].trim().replace(/['"]/g, '');
     if (params.some(isNaN)) throw new Error('不等式参数无效');
     return solveGeneralInequality(params, op);
   }
-  const ineqMatch = expr.match(/solveIneq\s*\(\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)/i);
+  const ineqMatch = expr.match(PATTERNS.ineq4);
   if (ineqMatch) {
     const a = Number(ineqMatch[1].trim());
     const b = Number(ineqMatch[2].trim());
@@ -387,7 +420,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // DMS conversion: toDMS(decimal)
-  const dmsMatch = expr.match(/toDMS\s*\(\s*([^)]+)\s*\)/i);
+  const dmsMatch = expr.match(PATTERNS.toDMS);
   if (dmsMatch) {
     const decimal = Number(dmsMatch[1].trim());
     if (isNaN(decimal)) {
@@ -409,7 +442,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Uniform distribution PDF: uniformPDF(x, a, b)
-  const uniformPDFMatch = expr.match(/uniformPDF\s*\(\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)/i);
+  const uniformPDFMatch = expr.match(PATTERNS.uniformPDF);
   if (uniformPDFMatch) {
     const x = Number(uniformPDFMatch[1].trim());
     const a = Number(uniformPDFMatch[2].trim());
@@ -421,7 +454,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Uniform distribution CDF: uniformCDF(x, a, b)
-  const uniformCDFMatch = expr.match(/uniformCDF\s*\(\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)/i);
+  const uniformCDFMatch = expr.match(PATTERNS.uniformCDF);
   if (uniformCDFMatch) {
     const x = Number(uniformCDFMatch[1].trim());
     const a = Number(uniformCDFMatch[2].trim());
@@ -433,7 +466,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Exponential distribution PDF: expPDF(x, lambda)
-  const expPDFMatch = expr.match(/expPDF\s*\(\s*([^,]+),\s*([^)]+)\s*\)/i);
+  const expPDFMatch = expr.match(PATTERNS.expPDF);
   if (expPDFMatch) {
     const x = Number(expPDFMatch[1].trim());
     const lambda = Number(expPDFMatch[2].trim());
@@ -444,7 +477,7 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Exponential distribution CDF: expCDF(x, lambda)
-  const expCDFMatch = expr.match(/expCDF\s*\(\s*([^,]+),\s*([^)]+)\s*\)/i);
+  const expCDFMatch = expr.match(PATTERNS.expCDF);
   if (expCDFMatch) {
     const x = Number(expCDFMatch[1].trim());
     const lambda = Number(expCDFMatch[2].trim());

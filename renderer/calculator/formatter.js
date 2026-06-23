@@ -259,8 +259,9 @@ export function matrixToString(matrix) {
 export function applyThousandSeparator(str) {
   if (!str || typeof str !== 'string') return str;
   // 不处理科学计数法、NaN、∞
-  if (str.includes('e') || str.includes('E') || str.includes('NaN') || str.includes('∞'))
+  if (str.includes('e') || str.includes('E') || str.includes('NaN') || str.includes('∞')) {
     return str;
+  }
   const parts = str.split('.');
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   return parts.join('.');

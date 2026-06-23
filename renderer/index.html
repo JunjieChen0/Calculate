@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-src 'none'; worker-src 'none';"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-src 'none'; worker-src 'none';"
     />
     <title>calculate_JYY</title>
     <link rel="stylesheet" href="styles.css" />
@@ -212,21 +212,89 @@
       </div>
 
       <!-- Mode Tabs -->
-      <div class="mode-tabs" role="tablist" aria-label="计算模式">
-        <button class="mode-tab active" data-mode="standard" role="tab" aria-selected="true">
+      <nav class="mode-tabs" role="tablist" aria-label="计算模式">
+        <button
+          class="mode-tab active"
+          data-mode="standard"
+          role="tab"
+          aria-selected="true"
+          aria-label="标准模式"
+        >
           标准
         </button>
-        <button class="mode-tab" data-mode="complex" role="tab" aria-selected="false">复数</button>
-        <button class="mode-tab" data-mode="matrix" role="tab" aria-selected="false">矩阵</button>
-        <button class="mode-tab" data-mode="vector" role="tab" aria-selected="false">向量</button>
-        <button class="mode-tab" data-mode="solve" role="tab" aria-selected="false">求解</button>
-        <button class="mode-tab" data-mode="base" role="tab" aria-selected="false">进制</button>
-        <button class="mode-tab" data-mode="convert" role="tab" aria-selected="false">换算</button>
-        <button class="mode-tab" data-mode="stats" role="tab" aria-selected="false">统计</button>
-        <button class="mode-tab" data-mode="calculus" role="tab" aria-selected="false">
+        <button
+          class="mode-tab"
+          data-mode="complex"
+          role="tab"
+          aria-selected="false"
+          aria-label="复数模式"
+        >
+          复数
+        </button>
+        <button
+          class="mode-tab"
+          data-mode="matrix"
+          role="tab"
+          aria-selected="false"
+          aria-label="矩阵模式"
+        >
+          矩阵
+        </button>
+        <button
+          class="mode-tab"
+          data-mode="vector"
+          role="tab"
+          aria-selected="false"
+          aria-label="向量模式"
+        >
+          向量
+        </button>
+        <button
+          class="mode-tab"
+          data-mode="solve"
+          role="tab"
+          aria-selected="false"
+          aria-label="求解模式"
+        >
+          求解
+        </button>
+        <button
+          class="mode-tab"
+          data-mode="base"
+          role="tab"
+          aria-selected="false"
+          aria-label="进制模式"
+        >
+          进制
+        </button>
+        <button
+          class="mode-tab"
+          data-mode="convert"
+          role="tab"
+          aria-selected="false"
+          aria-label="换算模式"
+        >
+          换算
+        </button>
+        <button
+          class="mode-tab"
+          data-mode="stats"
+          role="tab"
+          aria-selected="false"
+          aria-label="统计模式"
+        >
+          统计
+        </button>
+        <button
+          class="mode-tab"
+          data-mode="calculus"
+          role="tab"
+          aria-selected="false"
+          aria-label="微积分模式"
+        >
           微积分
         </button>
-      </div>
+      </nav>
 
       <!-- Stats Editor Panel (visible in stats mode) -->
       <div class="stats-editor-panel" id="stats-editor-panel" style="display: none">
@@ -251,32 +319,34 @@
       </div>
 
       <!-- Helper Panel (dynamic based on mode) -->
-      <div class="helper-panel" id="helper-panel">
-        <button class="helper-btn" data-insert="i">i</button>
-        <button class="helper-btn" data-insert="e">e</button>
-        <button class="helper-btn" data-insert="pi">π</button>
-        <button class="helper-btn" data-insert="!">!</button>
-        <button class="helper-btn" data-insert="%">%</button>
-        <button class="helper-btn" data-insert="nPr(">nPr</button>
-        <button class="helper-btn" data-insert="nCr(">nCr</button>
-        <button class="helper-btn" data-insert="rand()">Rand</button>
-        <button class="helper-btn" id="btn-ans" data-insert="ans">Ans</button>
+      <div class="helper-panel" id="helper-panel" role="toolbar" aria-label="辅助函数">
+        <button class="helper-btn" data-insert="i" aria-label="虚数单位 i">i</button>
+        <button class="helper-btn" data-insert="e" aria-label="自然常数 e">e</button>
+        <button class="helper-btn" data-insert="pi" aria-label="圆周率 π">π</button>
+        <button class="helper-btn" data-insert="!" aria-label="阶乘">!</button>
+        <button class="helper-btn" data-insert="%" aria-label="百分号">%</button>
+        <button class="helper-btn" data-insert="nPr(" aria-label="排列">nPr</button>
+        <button class="helper-btn" data-insert="nCr(" aria-label="组合">nCr</button>
+        <button class="helper-btn" data-insert="rand()" aria-label="随机数">Rand</button>
+        <button class="helper-btn" id="btn-ans" data-insert="ans" aria-label="上一次结果">
+          Ans
+        </button>
         <button class="helper-btn" id="angle-toggle" data-insert="" title="角度/弧度/百分度">
           RAD
         </button>
       </div>
 
       <!-- Memory Panel -->
-      <div class="memory-panel">
-        <button class="memory-btn" data-memory="MC">MC</button>
-        <button class="memory-btn" data-memory="MR">MR</button>
-        <button class="memory-btn" data-memory="M+">M+</button>
-        <button class="memory-btn" data-memory="M-">M-</button>
-        <button class="memory-btn" data-memory="MS">MS</button>
+      <div class="memory-panel" role="group" aria-label="存储操作">
+        <button class="memory-btn" data-memory="MC" aria-label="清除存储">MC</button>
+        <button class="memory-btn" data-memory="MR" aria-label="读取存储">MR</button>
+        <button class="memory-btn" data-memory="M+" aria-label="存储加">M+</button>
+        <button class="memory-btn" data-memory="M-" aria-label="存储减">M-</button>
+        <button class="memory-btn" data-memory="MS" aria-label="存储当前值">MS</button>
       </div>
 
       <!-- Keypad -->
-      <div class="keypad">
+      <div class="keypad" role="group" aria-label="计算器键盘">
         <!-- Row 1: Advanced functions -->
         <button class="key func" data-action="insert" data-value="asin(" aria-label="反正弦">
           sin⁻¹
@@ -295,9 +365,15 @@
         </button>
 
         <!-- Row 2 -->
-        <button class="key func" data-action="insert" data-value="sin(">sin</button>
-        <button class="key func" data-action="insert" data-value="cos(">cos</button>
-        <button class="key func" data-action="insert" data-value="tan(">tan</button>
+        <button class="key func" data-action="insert" data-value="sin(" aria-label="正弦">
+          sin
+        </button>
+        <button class="key func" data-action="insert" data-value="cos(" aria-label="余弦">
+          cos
+        </button>
+        <button class="key func" data-action="insert" data-value="tan(" aria-label="正切">
+          tan
+        </button>
         <button class="key func" data-action="insert" data-value="sqrt(" aria-label="平方根">
           √
         </button>
@@ -306,17 +382,23 @@
         </button>
 
         <!-- Row 3 -->
-        <button class="key func" data-action="insert" data-value="log10(">log</button>
-        <button class="key func" data-action="insert" data-value="ln(">ln</button>
-        <button class="key func" data-action="insert" data-value="^">^</button>
-        <button class="key func" data-action="insert" data-value="(">(</button>
-        <button class="key func" data-action="insert" data-value=")">)</button>
+        <button class="key func" data-action="insert" data-value="log10(" aria-label="常用对数">
+          log
+        </button>
+        <button class="key func" data-action="insert" data-value="ln(" aria-label="自然对数">
+          ln
+        </button>
+        <button class="key func" data-action="insert" data-value="^" aria-label="乘方">^</button>
+        <button class="key func" data-action="insert" data-value="(" aria-label="左括号">(</button>
+        <button class="key func" data-action="insert" data-value=")" aria-label="右括号">)</button>
 
         <!-- Row 4 -->
         <button class="key num base-num" data-action="insert" data-value="7">7</button>
         <button class="key num base-num" data-action="insert" data-value="8">8</button>
         <button class="key num base-num" data-action="insert" data-value="9">9</button>
-        <button class="key func" data-action="clear" data-value="C">AC</button>
+        <button class="key func" data-action="clear" data-value="C" aria-label="全部清除">
+          AC
+        </button>
         <button class="key func" data-action="backspace" data-value="⌫" aria-label="退格">⌫</button>
 
         <!-- Row 5 -->
@@ -330,7 +412,7 @@
         <button class="key num base-num" data-action="insert" data-value="1">1</button>
         <button class="key num base-num" data-action="insert" data-value="2">2</button>
         <button class="key num base-num" data-action="insert" data-value="3">3</button>
-        <button class="key op" data-action="insert" data-value="+">+</button>
+        <button class="key op" data-action="insert" data-value="+" aria-label="加">+</button>
         <button class="key op" data-action="insert" data-value="-" aria-label="减">−</button>
 
         <!-- Row 7 -->
@@ -338,7 +420,9 @@
         <button class="key num base-num" data-action="insert" data-value=".">.</button>
         <button class="key num base-num" data-action="insert" data-value="00">00</button>
         <button class="key num base-num" data-action="insert" data-value=",">,</button>
-        <button class="key equals" data-action="calculate" data-value="=">=</button>
+        <button class="key equals" data-action="calculate" data-value="=" aria-label="等于">
+          =
+        </button>
       </div>
     </div>
 
