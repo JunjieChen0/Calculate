@@ -18,6 +18,9 @@ let fractionType = 'improper'; // 'improper' | 'mixed'
 let thousandSeparator = false;
 let decimalSeparator = '.'; // '.' | ','
 let language = 'zh'; // 'zh' | 'en'
+let complexDisplayFormat = 'rect'; // 'rect' | 'polar'
+const ansStack = [];
+const MAX_ANS_STACK = 10;
 
 // Variable storage (A-Z, 9 variables)
 const variables = {};
@@ -154,6 +157,26 @@ export function getLanguage() {
   return language;
 }
 
+// --- Complex display format ---
+export function setComplexDisplayFormat(f) {
+  if (f === 'rect' || f === 'polar') {
+    complexDisplayFormat = f;
+  }
+}
+
+export function getComplexDisplayFormat() {
+  return complexDisplayFormat;
+}
+
+export function pushAnsStack(value) {
+  ansStack.push(value);
+  if (ansStack.length > MAX_ANS_STACK) ansStack.shift();
+}
+
+export function getAnsStack() {
+  return [...ansStack];
+}
+
 // --- 变量存储 ---
 export function setVariable(name, value) {
   if (typeof name !== 'string' || name.length !== 1 || !/[A-Z]/.test(name)) {
@@ -246,6 +269,8 @@ export function resetAllState() {
   thousandSeparator = false;
   decimalSeparator = '.';
   language = 'zh';
+  complexDisplayFormat = 'rect';
+  ansStack.length = 0;
 }
 
 // --- 供其他模块访问内部状态的 getter ---
@@ -293,4 +318,7 @@ export function _getVariables() {
 }
 export function _getCustomFunctions() {
   return customFunctions;
+}
+export function _getComplexDisplayFormat() {
+  return complexDisplayFormat;
 }

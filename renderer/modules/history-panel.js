@@ -1,3 +1,4 @@
+import { confirmAsync } from './modal.js';
 import {
   clearHistory,
   deleteHistoryItem,
@@ -18,8 +19,8 @@ export class HistoryPanelManager {
       setSearchQuery(e.target.value);
     });
 
-    this.historyClear?.addEventListener('click', () => {
-      if (confirm('确定要清空所有历史记录吗？')) {
+    this.historyClear?.addEventListener('click', async () => {
+      if (await confirmAsync('确定要清空所有历史记录吗？')) {
         clearHistory();
       }
     });

@@ -1,3 +1,4 @@
+import { logger } from './logger.js';
 /**
  * 响应式状态管理 —— 状态变更自动通知订阅者
  */
@@ -74,7 +75,7 @@ export class ReactiveState {
         try {
           cb(value, oldValue);
         } catch (e) {
-          console.error(`[ReactiveState] listener error for "${key}":`, e);
+          logger.error(`[ReactiveState] listener error for "${key}":`, e);
         }
       });
     }

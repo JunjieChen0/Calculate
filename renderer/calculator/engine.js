@@ -1,8 +1,8 @@
+import { math } from './math-instance.js';
 /**
  * 核心求值引擎模块
  * 表达式求值主入口，协调各模式处理器
  */
-import { create, all } from 'mathjs';
 import { MAX_TABLE_DATA_POINTS } from '../shared/constants.js';
 import {
   _getAngleUnit as getAngleUnit,
@@ -11,7 +11,8 @@ import {
   setVariable,
   setCustomFunction,
   _getCustomFunctions as getCustomFunctions,
-  _getDecimalSeparator as getDecimalSeparator
+  _getDecimalSeparator as getDecimalSeparator,
+  _getPrecision as getPrecision
 } from './state.js';
 import { formatResult, getFriendlyError } from './formatter.js';
 import { applyAngleConversions, convertInverseTrigOutput } from './angle-utils.js';
@@ -25,8 +26,6 @@ import {
 import { evaluateBaseExpression } from './base.js';
 import { evaluateVectorExpression } from './vector.js';
 import { handleSolve } from './solve.js';
-
-const math = create(all, { number: 'number', precision: 64 });
 
 /**
  * 评估自定义函数调用
@@ -48,6 +47,12 @@ function evaluateCustomFunction(name, argValue) {
  * @param {string} mode - 计算模式
  * @returns {{ success: boolean, result?: string, error?: string }}
  */
+/**
+ * 安全求数学表达式的值
+ * @param {string} expression - 数学表达式
+ * @param {string} mode - 计算模式: standard|complex|matrix|vector|solve|base|convert|stats
+ * @returns {{ success: boolean, result?: string, error?: string }}
+ */
 export function evaluateExpression(expression, mode = 'standard') {
   if (!expression || expression.trim() === '') {
     return { success: true, result: '0' };
@@ -61,7 +66,7 @@ export function evaluateExpression(expression, mode = 'standard') {
 
   // Handle multiple statements separated by colon
   const statements = expression
-    .split(':')
+    .split(/[:;]/)
     .map(s => s.trim())
     .filter(s => s.length > 0);
   if (statements.length > 1) {
@@ -147,6 +152,11 @@ export function evaluateExpression(expression, mode = 'standard') {
     expr = expr.replace(/\bnPr\(/g, 'permutations(');
     expr = expr.replace(/\bnCr\(/g, 'combinations(');
     expr = expr.replace(/\brand\(\)/g, 'random()');
+    // RND: round to current display precision
+    expr = expr.replace(/\brnd\(([^)]+)\)/g, (_, inner) => {
+      return 'round(' + inner + ', ' + getPrecision() + ')';
+    });
+
     expr = expr.replace(/\brandInt\s*\(\s*([^,]+),\s*([^)]+)\s*\)/gi, (_, a, b) => {
       const lo = Math.ceil(Number(a));
       const hi = Math.floor(Number(b));
@@ -172,6 +182,11 @@ export function evaluateExpression(expression, mode = 'standard') {
 
     let result;
 
+    // Logic keyword preprocessing
+    expr = expr.replace(/\band\b/g, ' and ');
+    expr = expr.replace(/\bor\b/g, ' or ');
+    expr = expr.replace(/\bnot\b/g, ' not ');
+
     switch (mode) {
       case 'base':
         result = evaluateBaseExpression(expr);
@@ -180,7 +195,13 @@ export function evaluateExpression(expression, mode = 'standard') {
         result = evaluateVectorExpression(expr);
         break;
       case 'complex':
-        result = math.evaluate(applyAngleConversions(expr), commonScope);
+        result = math.evaluate(applyAngleConversions(expr), {
+          ...commonScope,
+          re: math.re,
+          im: math.im,
+          arg: math.arg,
+          conj: math.conj
+        });
         break;
       case 'matrix':
         result = math.evaluate(expr, commonScope);
@@ -263,6 +284,14 @@ function handleCalculusResult(calculusResult) {
 
 /**
  * 生成数值表格
+ */
+/**
+ * 生成数值表格
+ * @param {string} expression - 函数表达式
+ * @param {number} start - 起始值
+ * @param {number} end - 结束值
+ * @param {number} step - 步长
+ * @returns {Array<{x: number, y: string}>}
  */
 export function generateTable(expression, start, end, step) {
   if (!expression || expression.trim() === '') {

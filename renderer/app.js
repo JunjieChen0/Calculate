@@ -3,6 +3,7 @@ import {
   evaluateExpression,
   getAngleUnit,
   setAns,
+  pushAnsStack,
   setPrecision,
   getPrecision,
   setDisplayFormat,
@@ -46,6 +47,11 @@ import { qrToDataURL } from './modules/qrcode.js';
 import { EventBus } from './core/event-bus.js';
 import { ReactiveState } from './core/state.js';
 import { errorHandler } from './core/errors.js';
+import { UndoManager } from './app/undo-manager.js';
+import { ExpressionHistory } from './app/expression-history.js';
+import { applyBackspace, applyInsert } from './app/input-handler.js';
+import { logger } from './core/logger.js';
+import { confirmAsync } from './modules/modal.js';
 
 // ── DOM Elements ──
 const helperPanel = document.getElementById('helper-panel');
@@ -60,22 +66,18 @@ const uiState = new ReactiveState({
   cursorIndex: 0
 });
 
-// ── 撤销栈 ──
-const undoStack = [];
-const MAX_UNDO = 50;
+// -- undo/history managers --
+const undoManager = new UndoManager();
+const expressionHistory = new ExpressionHistory();
 
 function pushUndo() {
-  undoStack.push({
-    input: uiState.get('currentInput'),
-    cursor: uiState.get('cursorIndex')
-  });
-  if (undoStack.length > MAX_UNDO) undoStack.shift();
+  undoManager.push(uiState.get('currentInput'), uiState.get('cursorIndex'));
 }
 
 function handleUndo() {
-  if (undoStack.length === 0) return;
-  const state = undoStack.pop();
-  uiState.batch({ currentInput: state.input, cursorIndex: state.cursor });
+  const state = undoManager.pop();
+  if (!state) return;
+  uiState.batch({ currentInput: state.input, cursorIndex: state.cursorIndex });
   updateDisplayWithCursor();
 }
 
@@ -84,8 +86,14 @@ const store = createStore();
 const panelManager = new PanelManager();
 const settingsManager = new SettingsManager(store);
 const memoryManager = new MemoryManager(store);
-const statsEditor = new StatsEditor();
-new TableManager();
+const statsEditor = new StatsEditor(({ x, y }) => {
+  if (uiState.get('currentMode') === 'stats') {
+    const expr = y ? `linReg(${x},${y})` : `mean(${x})`;
+    uiState.batch({ currentInput: expr, cursorIndex: expr.length });
+    updateDisplayWithCursor();
+  }
+});
+const tableMgr = new TableManager();
 let varsPanelMgr;
 let spreadsheetMgr;
 
@@ -119,7 +127,9 @@ async function init() {
     isPanelOpen: () => panelManager.activePanel !== null,
     closePanel: () => panelManager.closeAll(),
     onToggleHelp: () => panelManager.toggle('help'),
-    onUndo: handleUndo
+    onUndo: handleUndo,
+    onHistoryUp: () => navigateHistory('up'),
+    onHistoryDown: () => navigateHistory('down')
   });
   updateDisplayWithCursor();
 }
@@ -192,16 +202,6 @@ function bindEvents() {
     });
   });
 
-  // Stats editor insert event
-  document.addEventListener('stats-insert', e => {
-    const { x, y } = e.detail;
-    if (uiState.get('currentMode') === 'stats') {
-      const expr = y ? `linReg(${x},${y})` : `mean(${x})`;
-      uiState.batch({ currentInput: expr, cursorIndex: expr.length });
-      updateDisplayWithCursor();
-    }
-  });
-
   // Header buttons
   document
     .getElementById('history-toggle')
@@ -225,6 +225,51 @@ function bindEvents() {
   document
     .getElementById('spreadsheet-clear')
     ?.addEventListener('click', () => spreadsheetMgr.clearAll());
+
+  // Table import/export
+  document
+    .getElementById('table-export-csv')
+    ?.addEventListener('click', () => tableMgr.exportCSV());
+  document
+    .getElementById('table-export-json')
+    ?.addEventListener('click', () => tableMgr.exportJSON());
+  document.getElementById('table-import-file')?.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.name.endsWith('.json')) tableMgr.importJSON(file);
+    else tableMgr.importCSV(file);
+    e.target.value = '';
+  });
+
+  // Spreadsheet import/export
+  document
+    .getElementById('ss-export-csv')
+    ?.addEventListener('click', () => spreadsheetMgr.exportCSV());
+  document
+    .getElementById('ss-export-json')
+    ?.addEventListener('click', () => spreadsheetMgr.exportJSON());
+  document.getElementById('ss-import-file')?.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.name.endsWith('.json')) spreadsheetMgr.importJSON(file);
+    else spreadsheetMgr.importCSV(file);
+    e.target.value = '';
+  });
+
+  // Stats editor import/export
+  document
+    .getElementById('stats-export-csv')
+    ?.addEventListener('click', () => statsEditor.exportCSV());
+  document
+    .getElementById('stats-export-json')
+    ?.addEventListener('click', () => statsEditor.exportJSON());
+  document.getElementById('stats-import-file')?.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.name.endsWith('.json')) statsEditor.importJSON(file);
+    else statsEditor.importCSV(file);
+    e.target.value = '';
+  });
   document
     .getElementById('settings-toggle')
     .addEventListener('click', () => panelManager.toggle('settings'));
@@ -405,22 +450,30 @@ function setBase(base) {
 
 function insertText(text) {
   pushUndo();
+  // Handle S-D toggle
+  if (text === 'S_D') {
+    const currentMode = getFractionMode();
+    setFractionMode(!currentMode);
+    recalculateCurrent();
+    settingsManager.save();
+    return;
+  }
+
   const insertValue = getHelperText(text);
   const currentInput = uiState.get('currentInput');
   const cursorIndex = uiState.get('cursorIndex');
-  const newInput =
-    currentInput.slice(0, cursorIndex) + insertValue + currentInput.slice(cursorIndex);
-  uiState.batch({ currentInput: newInput, cursorIndex: cursorIndex + insertValue.length });
+  const result = applyInsert(currentInput, insertValue, cursorIndex);
+  uiState.batch({ currentInput: result.input, cursorIndex: result.cursorIndex });
   updateDisplayWithCursor();
 }
 
 function handleBackspace() {
+  const currentInput = uiState.get('currentInput');
   const cursorIndex = uiState.get('cursorIndex');
-  if (cursorIndex > 0) {
+  const result = applyBackspace(currentInput, cursorIndex);
+  if (result.cursorIndex !== cursorIndex) {
     pushUndo();
-    const currentInput = uiState.get('currentInput');
-    const newInput = currentInput.slice(0, cursorIndex - 1) + currentInput.slice(cursorIndex);
-    uiState.batch({ currentInput: newInput, cursorIndex: cursorIndex - 1 });
+    uiState.batch({ currentInput: result.input, cursorIndex: result.cursorIndex });
   }
   updateDisplayWithCursor();
 }
@@ -458,6 +511,13 @@ function handleAutoBracket() {
   }
 }
 
+function navigateHistory(direction) {
+  const expr = expressionHistory.navigate(direction);
+  if (expr === null) return;
+  uiState.batch({ currentInput: expr, cursorIndex: expr.length });
+  updateDisplayWithCursor();
+}
+
 function handleCalculate() {
   const currentInput = uiState.get('currentInput');
   if (!currentInput.trim()) {
@@ -476,8 +536,10 @@ function handleCalculate() {
     const resultStr = result.result;
     uiState.set('lastResult', resultStr);
     setAns(resultStr);
+    pushAnsStack(resultStr);
     clearError();
     addHistory({ expression: expr, result: resultStr, mode: uiState.get('currentMode') });
+    expressionHistory.push(expr);
     bus.emit('calculated', { expression: expr, result: resultStr });
     uiState.batch({ currentInput: resultStr, cursorIndex: resultStr.length });
     updateDisplayWithCursor();
@@ -546,8 +608,8 @@ function handleHistorySelect(historyItem) {
   panelManager.toggle('history');
 }
 
-function handleClearHistory() {
-  if (confirm('确定要清空所有历史记录吗？')) {
+async function handleClearHistory() {
+  if (await confirmAsync('确定要清空所有历史记录吗？')) {
     clearHistory();
   }
 }
@@ -558,5 +620,5 @@ export { bus, uiState };
 // ── Start the app ──
 init().catch(error => {
   const handled = errorHandler.handle(error);
-  console.error('Failed to initialize app:', handled.error);
+  logger.error('Failed to initialize app:', handled.error);
 });

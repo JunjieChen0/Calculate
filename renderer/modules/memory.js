@@ -1,4 +1,5 @@
 import { FEEDBACK_DISPLAY_TIMEOUT } from '../shared/constants.js';
+import { logger } from '../core/logger.js';
 
 export class MemoryManager {
   constructor(store) {
@@ -14,7 +15,7 @@ export class MemoryManager {
       this.hasMemory = saved.hasMemory || false;
       this.updateButtons();
     } catch (error) {
-      console.warn('Failed to load memory:', error);
+      logger.warn('Failed to load memory:', error);
     }
   }
 
@@ -22,7 +23,7 @@ export class MemoryManager {
     try {
       await this.store.set('calculator_memory', { value: this.value, hasMemory: this.hasMemory });
     } catch (error) {
-      console.warn('Failed to save memory:', error);
+      logger.warn('Failed to save memory:', error);
     }
     this.updateButtons();
   }

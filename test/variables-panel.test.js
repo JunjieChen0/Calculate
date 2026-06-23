@@ -1,7 +1,16 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock DOM elements
-const mockList = { innerHTML: '', addEventListener: vi.fn() };
+const mockList = {
+  innerHTML: '',
+  addEventListener: vi.fn(),
+  appendChild(el) {
+    this.innerHTML += el.innerHTML || el.textContent || '';
+  },
+  set textContent(v) {
+    if (v === '') this.innerHTML = '';
+  }
+};
 const mockClearAllBtn = { addEventListener: vi.fn() };
 
 vi.stubGlobal('document', {

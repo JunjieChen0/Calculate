@@ -1,10 +1,10 @@
-/**
- * 计算器模块 — 向后兼容包装层
- * 所有功能已拆分到 calculator/ 子目录下的独立模块
- * 此文件仅做 re-export，保持原有导入路径不变
+﻿/**
+ * 璁＄畻鍣ㄦā鍧?— 鍚戝悗鍏煎鍖呰灞?
+ * 鎵€鏈夊姛鑳藉凡鎷嗗垎鍒?calculator/ 瀛愮洰褰曚笅鐨勭嫭绔嬫ā鍧?
+ * 姝ゆ枃浠朵粎鍋?re-export锛屼繚鎸佸師鏈夊鍏ヨ矾寰勪笉鍙?
  */
 
-// 状态管理
+// 鐘舵€佺悊
 export {
   setAngleUnit,
   getAngleUnit,
@@ -30,6 +30,10 @@ export {
   getDecimalSeparator,
   setLanguage,
   getLanguage,
+  setComplexDisplayFormat,
+  getComplexDisplayFormat,
+  pushAnsStack,
+  getAnsStack,
   setVariable,
   getVariable,
   getAllVariables,
@@ -43,8 +47,8 @@ export {
   _getCustomFunctions
 } from './calculator/state.js';
 
-// 核心引擎
+// 鏍稿績寮曟搸
 export { evaluateExpression, generateTable } from './calculator/engine.js';
 
-// mathjs 实例
+// mathjs 瀹炰緥
 export { math } from './calculator/index.js';

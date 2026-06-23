@@ -77,3 +77,28 @@ export const BASES = Object.freeze({
   DEC: 10,
   HEX: 16
 });
+// 撤销栈
+export const MAX_UNDO_SIZE = 50;
+
+// 表达式历史导航
+export const MAX_EXPRESSION_HISTORY = 100;
+
+// 骰子/硬币模拟
+export const DICE_MAX_ROLLS = 100;
+export const COIN_MAX_FLIPS = 100;
+
+// 概率分布级数展开项数
+export const REGULARIZED_SERIES_TERMS = 200;
+
+// 格式化阈值
+export const NORM1_EXPONENT_THRESHOLD_LOW = 1e-2;
+export const NORM2_EXPONENT_THRESHOLD_LOW = 1e-9;
+export const NORM_EXPONENT_THRESHOLD_HIGH = 1e10;
+
+// 方程求解
+export const ABERDEEN_MAX_ITERATIONS = 500;
+export const ABERDEEN_TOLERANCE = 1e-14;
+
+// 统计编辑器
+export const MAX_STATS_ROWS = 100;
+export const INITIAL_STATS_ROWS = 5;

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, session } = require('electron');
 const path = require('path');
 const { ALLOWED_STORE_KEYS, MAX_STORE_VALUE_SIZE } = require('./shared/constants.cjs');
 
@@ -135,4 +135,19 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
+});
+// Security: reject all permission requests
+session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => {
+  callback(false);
+});
+
+// Security: set additional response headers
+session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+  callback({
+    responseHeaders: {
+      ...details.responseHeaders,
+      'X-Content-Type-Options': ['nosniff'],
+      'X-Frame-Options': ['DENY']
+    }
+  });
 });

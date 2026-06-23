@@ -1,3 +1,4 @@
+import { logger } from '../core/logger.js';
 import {
   setPrecision,
   getPrecision,
@@ -20,7 +21,9 @@ import {
   setLanguage,
   getLanguage,
   setAngleUnit,
-  getAngleUnit
+  getAngleUnit,
+  setComplexDisplayFormat,
+  getComplexDisplayFormat
 } from '../calculator.js';
 
 const ANGLE_UNITS = ['rad', 'deg', 'grad'];
@@ -68,11 +71,14 @@ export class SettingsManager {
       if (saved.language) setLanguage(saved.language);
       if (saved.angleUnit) {
         setAngleUnit(saved.angleUnit);
+        if (saved.complexDisplayFormat) {
+          setComplexDisplayFormat(saved.complexDisplayFormat);
+        }
       }
       this.autoBracketEnabled = saved.autoBracket !== false;
       this.updateUI();
     } catch (error) {
-      console.warn('Failed to load settings:', error);
+      logger.warn('Failed to load settings:', error);
     }
   }
 
@@ -92,10 +98,11 @@ export class SettingsManager {
         thousandSeparator: getThousandSeparator(),
         decimalSeparator: getDecimalSeparator(),
         language: getLanguage(),
-        angleUnit: getAngleUnit()
+        angleUnit: getAngleUnit(),
+        complexDisplayFormat: getComplexDisplayFormat()
       });
     } catch (error) {
-      console.warn('Failed to save settings:', error);
+      logger.warn('Failed to save settings:', error);
     }
   }
 

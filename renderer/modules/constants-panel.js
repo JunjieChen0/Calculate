@@ -31,7 +31,11 @@ export class ConstantsPanelManager {
     const items = searchConstants(query);
 
     if (items.length === 0) {
-      this.constantsList.innerHTML = '<div class="constants-empty">未找到匹配的常量</div>';
+      this.constantsList.textContent = '';
+      const emptyDiv = document.createElement('div');
+      emptyDiv.className = 'constants-empty';
+      emptyDiv.textContent = '未找到匹配的常量';
+      this.constantsList.appendChild(emptyDiv);
       return;
     }
 

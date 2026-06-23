@@ -13,7 +13,9 @@ export function initKeyboard({
   isPanelOpen,
   closePanel,
   onToggleHelp,
-  onUndo
+  onUndo,
+  onHistoryUp,
+  onHistoryDown
 }) {
   document.addEventListener('keydown', event => {
     // Ignore when typing in editable fields
@@ -33,6 +35,18 @@ export function initKeyboard({
     }
 
     // Cursor movement
+    if (key === 'ArrowUp') {
+      event.preventDefault();
+      if (onHistoryUp) onHistoryUp();
+      return;
+    }
+
+    if (key === 'ArrowDown') {
+      event.preventDefault();
+      if (onHistoryDown) onHistoryDown();
+      return;
+    }
+
     if (key === 'ArrowLeft') {
       event.preventDefault();
       if (onCursorLeft) {

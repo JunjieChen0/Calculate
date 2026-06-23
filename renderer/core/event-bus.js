@@ -1,3 +1,4 @@
+import { logger } from './logger.js';
 /**
  * 轻量级事件总线 —— 模块间解耦通信
  */
@@ -41,7 +42,7 @@ export class EventBus {
         try {
           cb(data);
         } catch (e) {
-          console.error(`[EventBus] handler error for "${event}":`, e);
+          logger.error(`[EventBus] handler error for "${event}":`, e);
         }
       });
     }

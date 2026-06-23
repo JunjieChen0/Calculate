@@ -1,3 +1,4 @@
+import { logger } from './logger.js';
 /**
  * 统一错误类型
  */
@@ -63,13 +64,13 @@ export class ErrorHandler {
    */
   handle(error) {
     if (error instanceof CalculatorError) {
-      console.warn(`[CalculatorError] ${error.code}: ${error.message}`, error.details);
+      logger.warn(`[CalculatorError] ${error.code}: ${error.message}`, error.details);
       return { success: false, error: error.message, code: error.code };
     }
 
     const code = this._detectCode(error);
     const friendly = FRIENDLY_MESSAGES[code] || this.fallbackMessage;
-    console.warn(`[ErrorHandler] ${code}:`, error?.message);
+    logger.warn(`[ErrorHandler] ${code}:`, error?.message);
     return { success: false, error: friendly, code };
   }
 
