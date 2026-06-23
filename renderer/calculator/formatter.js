@@ -13,7 +13,8 @@ import {
   _getFractionType as getFractionType,
   _getThousandSeparator as getThousandSeparator,
   _getDecimalSeparator as getDecimalSeparator,
-  _getLanguage as getLanguage
+  _getLanguage as getLanguage,
+  _getComplexDisplayFormat as getComplexDisplayFormat
 } from './state.js';
 
 const math = create(all, { number: 'number', precision: 64 });
@@ -101,6 +102,14 @@ export function formatResult(result) {
 
   // 非数字类型直接返回
   if (result instanceof math.Complex) {
+    // Polar display format
+    if (getComplexDisplayFormat() === 'polar') {
+      const polar = result.toPolar();
+      const r = parseFloat(polar.r.toPrecision(getPrecision()));
+      let phiDeg = (polar.phi * 180) / Math.PI;
+      phiDeg = parseFloat(phiDeg.toPrecision(getPrecision()));
+      return r + '∠' + phiDeg + '°';
+    }
     if (Math.abs(result.im) < 1e-14) {
       return formatResult(result.re);
     }

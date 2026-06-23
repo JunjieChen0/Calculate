@@ -135,9 +135,38 @@ function solveSpecialEquation(expr) {
 
     const discriminant = b * b - 4 * a * c;
     if (discriminant >= 0) {
-      const x1 = (-b + Math.sqrt(discriminant)) / (2 * a);
-      const x2 = (-b - Math.sqrt(discriminant)) / (2 * a);
-      return [x1, x2];
+      const sqrtD = Math.sqrt(discriminant);
+      if (Number.isInteger(sqrtD)) {
+        // Exact rational roots
+        return [(-b + sqrtD) / (2 * a), (-b - sqrtD) / (2 * a)];
+      }
+      // Exact radical form: (-b +/- sqrt(D)) / (2a)
+      // Simplify: factor out GCD from b and D, and factor from sqrt(D)
+      const sqFree = simplifySqrt(discriminant);
+      // Result: (-b +/- sqFree.a*sqrt(sqFree.b)) / (2a)
+      // Try to simplify the overall fraction
+      const denom = 2 * a;
+      const g1 = gcdInt(Math.abs(Math.round(b)), Math.abs(Math.round(denom)));
+      const g2 = gcdInt(sqFree.a, Math.abs(Math.round(denom)));
+      const commonG = gcdInt(g1, g2);
+      const sB = -b / commonG;
+      const sA = sqFree.a / commonG;
+      const sDenom = denom / commonG;
+      if (sDenom === 1) {
+        if (sA === 1) {
+          return [sB + '+' + '√' + sqFree.b, sB + '-' + '√' + sqFree.b];
+        }
+        return [sB + '+' + sA + '√' + sqFree.b, sB + '-' + sA + '√' + sqFree.b];
+      }
+      if (sB === 0) {
+        if (sA === 1) {
+          return ['√' + sqFree.b + '/' + sDenom, '-√' + sqFree.b + '/' + sDenom];
+        }
+        return [sA + '√' + sqFree.b + '/' + sDenom, '-' + sA + '√' + sqFree.b + '/' + sDenom];
+      }
+      const num1 = sA === 1 ? sB + '+√' + sqFree.b : sB + '+' + sA + '√' + sqFree.b;
+      const num2 = sA === 1 ? sB + '-√' + sqFree.b : sB + '-' + sA + '√' + sqFree.b;
+      return ['(' + num1 + ')/' + sDenom, '(' + num2 + ')/' + sDenom];
     } else {
       const real = -b / (2 * a);
       const imag = Math.sqrt(-discriminant) / (2 * a);
@@ -503,4 +532,25 @@ function extractVariables(expr) {
   ]);
   const vars = [...new Set(matches)].filter(v => !exclude.has(v));
   return vars;
+}
+
+function simplifySqrt(n) {
+  let a = 1,
+    b = n;
+  for (let i = 2; i * i <= b; i++) {
+    while (b % (i * i) === 0) {
+      a *= i;
+      b /= i * i;
+    }
+  }
+  return { a, b };
+}
+
+function gcdInt(a, b) {
+  a = Math.abs(Math.round(a));
+  b = Math.abs(Math.round(b));
+  while (b) {
+    [a, b] = [b, a % b];
+  }
+  return a || 1;
 }

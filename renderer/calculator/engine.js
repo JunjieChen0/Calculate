@@ -11,7 +11,8 @@ import {
   setVariable,
   setCustomFunction,
   _getCustomFunctions as getCustomFunctions,
-  _getDecimalSeparator as getDecimalSeparator
+  _getDecimalSeparator as getDecimalSeparator,
+  _getPrecision as getPrecision
 } from './state.js';
 import { formatResult, getFriendlyError } from './formatter.js';
 import { applyAngleConversions, convertInverseTrigOutput } from './angle-utils.js';
@@ -61,7 +62,7 @@ export function evaluateExpression(expression, mode = 'standard') {
 
   // Handle multiple statements separated by colon
   const statements = expression
-    .split(':')
+    .split(/[:;]/)
     .map(s => s.trim())
     .filter(s => s.length > 0);
   if (statements.length > 1) {
@@ -147,6 +148,11 @@ export function evaluateExpression(expression, mode = 'standard') {
     expr = expr.replace(/\bnPr\(/g, 'permutations(');
     expr = expr.replace(/\bnCr\(/g, 'combinations(');
     expr = expr.replace(/\brand\(\)/g, 'random()');
+    // RND: round to current display precision
+    expr = expr.replace(/\brnd\(([^)]+)\)/g, (_, inner) => {
+      return 'round(' + inner + ', ' + getPrecision() + ')';
+    });
+
     expr = expr.replace(/\brandInt\s*\(\s*([^,]+),\s*([^)]+)\s*\)/gi, (_, a, b) => {
       const lo = Math.ceil(Number(a));
       const hi = Math.floor(Number(b));
@@ -172,6 +178,11 @@ export function evaluateExpression(expression, mode = 'standard') {
 
     let result;
 
+    // Logic keyword preprocessing
+    expr = expr.replace(/\band\b/g, ' and ');
+    expr = expr.replace(/\bor\b/g, ' or ');
+    expr = expr.replace(/\bnot\b/g, ' not ');
+
     switch (mode) {
       case 'base':
         result = evaluateBaseExpression(expr);
@@ -180,7 +191,13 @@ export function evaluateExpression(expression, mode = 'standard') {
         result = evaluateVectorExpression(expr);
         break;
       case 'complex':
-        result = math.evaluate(applyAngleConversions(expr), commonScope);
+        result = math.evaluate(applyAngleConversions(expr), {
+          ...commonScope,
+          re: math.re,
+          im: math.im,
+          arg: math.arg,
+          conj: math.conj
+        });
         break;
       case 'matrix':
         result = math.evaluate(expr, commonScope);

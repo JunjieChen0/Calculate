@@ -377,6 +377,93 @@ export class SpreadsheetManager {
     });
   }
 
+  exportCSV() {
+    const rows = [];
+    rows.push(['', 'A', 'B', 'C', 'D', 'E'].join(','));
+    for (let r = 1; r <= 20; r++) {
+      const row = [r];
+      for (const col of ['A', 'B', 'C', 'D', 'E']) {
+        const v = this.cells[col + r] || '';
+        row.push(v.includes(',') ? '"' + v + '"' : v);
+      }
+      rows.push(row.join(','));
+    }
+    this._download(rows.join('\n'), 'spreadsheet.csv', 'text/csv');
+  }
+
+  exportJSON() {
+    const obj = { cells: {} };
+    for (const [k, v] of Object.entries(this.cells)) {
+      if (v !== '' && v !== undefined) obj.cells[k] = v;
+    }
+    this._download(JSON.stringify(obj, null, 2), 'spreadsheet.json', 'application/json');
+  }
+
+  importCSV(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const lines = e.target.result.trim().split(/\r?\n/);
+      this.clearAll();
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',');
+        const row = parseInt(cols[0]);
+        if (isNaN(row)) continue;
+        for (let c = 1; c < cols.length && c <= 5; c++) {
+          const val = cols[c].replace(/^"|"$/g, '').trim();
+          if (val !== '') {
+            const cellId = 'ABCDE'[c - 1] + row;
+            this.cells[cellId] = val;
+          }
+        }
+      }
+      this.recalculate();
+      if (this.tableEl) {
+        this.tableEl.querySelectorAll('.ss-input').forEach(el => {
+          const id = el.dataset.cell;
+          el.value = this.cells[id] || '';
+        });
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  importJSON(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const obj = JSON.parse(e.target.result);
+        this.clearAll();
+        if (obj.cells) {
+          for (const [k, v] of Object.entries(obj.cells)) {
+            this.cells[k] = String(v);
+          }
+        }
+        this.recalculate();
+        if (this.tableEl) {
+          this.tableEl.querySelectorAll('.ss-input').forEach(el => {
+            const id = el.dataset.cell;
+            el.value = this.cells[id] || '';
+          });
+        }
+      } catch {
+        /* ignore parse error */
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  _download(content, filename, mime) {
+    const blob = new Blob(['﻿' + content], { type: mime + ';charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   clearAll() {
     this.cells = {};
     if (this.tableEl) {

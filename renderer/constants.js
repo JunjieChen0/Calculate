@@ -325,6 +325,29 @@ export const CONSTANTS = [
     category: '天文',
     insert: '6.9634e8',
     unit: 'm'
+  },
+  {
+    name: '法拉第常数',
+    symbol: 'F',
+    value: '96485.33212',
+    category: '物理',
+    insert: '96485.33212',
+    unit: 'C/mol'
+  },
+  {
+    name: '原子质量单位',
+    symbol: 'u',
+    value: '1.66053906660e-27',
+    category: '物理',
+    insert: '1.66053906660e-27',
+    unit: 'kg'
+  },
+  {
+    name: '磅兹常数',
+    symbol: 'c_0',
+    value: '1.000000000',
+    category: '物理',
+    insert: '1'
   }
 ];
 

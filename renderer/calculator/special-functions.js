@@ -47,7 +47,12 @@ const PATTERNS = Object.freeze({
   uniformPDF: /^\s*uniformPDF\s*\(\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
   uniformCDF: /^\s*uniformCDF\s*\(\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
   expPDF: /^\s*expPDF\s*\(\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
-  expCDF: /^\s*expCDF\s*\(\s*([^,]+),\s*([^)]+)\s*\)\s*$/i
+  expCDF: /^\s*expCDF\s*\(\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  geoPMF: /^\s*geoPMF\s*\(\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  geoCDF: /^\s*geoCDF\s*\(\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  chi2CDF: /^\s*chi2CDF\s*\(\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  tCDF: /^\s*tCDF\s*\(\s*([^,]+),\s*([^)]+)\s*\)\s*$/i,
+  FCDF: /^\s*FCDF\s*\(\s*([^,]+),\s*([^,]+),\s*([^)]+)\s*\)\s*$/i
 });
 
 /**
@@ -477,6 +482,63 @@ export function handleSpecialFunctions(expr) {
   }
 
   // Exponential distribution CDF: expCDF(x, lambda)
+
+  // Geometric distribution PMF: geoPMF(k, p)
+  const geoPMFMatch = expr.match(PATTERNS.geoPMF);
+  if (geoPMFMatch) {
+    const k = Number(geoPMFMatch[1].trim());
+    const p = Number(geoPMFMatch[2].trim());
+    if (isNaN(k) || isNaN(p) || p <= 0 || p >= 1 || k < 0 || !Number.isInteger(k)) {
+      throw new Error('geoPMF(k,p) 参数无效');
+    }
+    return Math.pow(1 - p, k) * p;
+  }
+
+  // Geometric distribution CDF: geoCDF(k, p)
+  const geoCDFMatch = expr.match(PATTERNS.geoCDF);
+  if (geoCDFMatch) {
+    const k = Number(geoCDFMatch[1].trim());
+    const p = Number(geoCDFMatch[2].trim());
+    if (isNaN(k) || isNaN(p) || p <= 0 || p >= 1 || k < 0) {
+      throw new Error('geoCDF(k,p) 参数无效');
+    }
+    return 1 - Math.pow(1 - p, Math.floor(k) + 1);
+  }
+
+  // Chi-squared CDF: chi2CDF(x, df)
+  const chi2CDFMatch = expr.match(PATTERNS.chi2CDF);
+  if (chi2CDFMatch) {
+    const x = Number(chi2CDFMatch[1].trim());
+    const df = Number(chi2CDFMatch[2].trim());
+    if (isNaN(x) || isNaN(df) || df < 1 || x < 0) {
+      throw new Error('chi2CDF(x,df) 参数无效');
+    }
+    return chiSquaredCDF(x, df);
+  }
+
+  // Student's t CDF: tCDF(x, df)
+  const tCDFMatch = expr.match(PATTERNS.tCDF);
+  if (tCDFMatch) {
+    const x = Number(tCDFMatch[1].trim());
+    const df = Number(tCDFMatch[2].trim());
+    if (isNaN(x) || isNaN(df) || df < 1) {
+      throw new Error('tCDF(x,df) 参数无效');
+    }
+    return tDistributionCDF(x, df);
+  }
+
+  // F distribution CDF: FCDF(x, df1, df2)
+  const FCDFMatch = expr.match(PATTERNS.FCDF);
+  if (FCDFMatch) {
+    const x = Number(FCDFMatch[1].trim());
+    const df1 = Number(FCDFMatch[2].trim());
+    const df2 = Number(FCDFMatch[3].trim());
+    if (isNaN(x) || isNaN(df1) || isNaN(df2) || df1 < 1 || df2 < 1 || x < 0) {
+      throw new Error('FCDF(x,df1,df2) 参数无效');
+    }
+    return fDistributionCDF(x, df1, df2);
+  }
+
   const expCDFMatch = expr.match(PATTERNS.expCDF);
   if (expCDFMatch) {
     const x = Number(expCDFMatch[1].trim());
@@ -1225,4 +1287,70 @@ function factorial(n) {
     result *= i;
   }
   return result;
+}
+
+function chiSquaredCDF(x, df) {
+  return regularizedGamma(df / 2, x / 2);
+}
+
+function tDistributionCDF(t, df) {
+  const x = df / (df + t * t);
+  const ibeta = regularizedBeta(df / 2, 0.5, x);
+  if (t >= 0) return 1 - 0.5 * ibeta;
+  return 0.5 * ibeta;
+}
+
+function fDistributionCDF(x, df1, df2) {
+  const a = df1 / 2;
+  const b = df2 / 2;
+  const z = (df1 * x) / (df1 * x + df2);
+  return regularizedBeta(a, b, z);
+}
+
+function regularizedGamma(a, x) {
+  if (x < 0) return 0;
+  if (x === 0) return 0;
+  const n = 200;
+  let sum = 0;
+  let term = 1 / a;
+  for (let i = 0; i < n; i++) {
+    sum += term;
+    term *= x / (a + i + 1);
+    if (Math.abs(term) < 1e-15) break;
+  }
+  return Math.min(1, (Math.pow(x, a) * Math.exp(-x) * sum) / gamma(a));
+}
+
+function regularizedBeta(a, b, x) {
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+  const n = 200;
+  let sum = 0;
+  let term = 1;
+  for (let i = 0; i < n; i++) {
+    sum += term;
+    term *= (((a + i) * x) / (i + 1)) * (1 - x);
+    if (Math.abs(term) < 1e-15) break;
+  }
+  const bt = Math.pow(x, a) * Math.pow(1 - x, b);
+  return Math.min(1, (bt * sum) / (a * beta(a, b)));
+}
+
+function beta(a, b) {
+  return (gamma(a) * gamma(b)) / gamma(a + b);
+}
+
+function gamma(z) {
+  if (z < 0.5) return Math.PI / (Math.sin(Math.PI * z) * gamma(1 - z));
+  z -= 1;
+  const g = 7;
+  const c = [
+    0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313,
+    -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6,
+    1.5056327351493116e-7
+  ];
+  let x = c[0];
+  for (let i = 1; i < g + 2; i++) x += c[i] / (z + i);
+  const t = z + g + 0.5;
+  return Math.sqrt(2 * Math.PI) * Math.pow(t, z + 0.5) * Math.exp(-t) * x;
 }

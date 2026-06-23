@@ -303,6 +303,15 @@
           <button class="stats-editor-btn" id="stats-add-row" title="添加行">+</button>
           <button class="stats-editor-btn" id="stats-clear" title="清空">清空</button>
           <button class="stats-editor-btn" id="stats-insert" title="插入到输入">插入</button>
+          <button class="stats-editor-btn" id="stats-export-csv" title="导出CSV">CSV</button>
+          <button class="stats-editor-btn" id="stats-export-json" title="导出JSON">JSON</button>
+          <label class="stats-editor-btn" title="导入"
+            >导入<input
+              type="file"
+              id="stats-import-file"
+              accept=".csv,.json"
+              style="display: none"
+          /></label>
         </div>
         <div class="stats-editor-table-wrap">
           <table class="stats-editor-table" id="stats-editor-table">
@@ -311,6 +320,7 @@
                 <th>#</th>
                 <th>x</th>
                 <th>y</th>
+                <th>Freq</th>
               </tr>
             </thead>
             <tbody id="stats-editor-body"></tbody>
@@ -651,7 +661,17 @@
           </div>
           <div class="table-actions">
             <button id="table-generate" class="helper-btn active">生成表格</button>
-            <button id="table-plot" class="helper-btn">绘制图像</button>
+            <button id="table-plot" class="helper-btn">
+              <button id="table-export-csv" class="helper-btn" title="导出CSV">CSV</button>
+              <button id="table-export-json" class="helper-btn" title="导出JSON">JSON</button>
+              <label class="helper-btn" title="导入"
+                >导入<input
+                  type="file"
+                  id="table-import-file"
+                  accept=".csv,.json"
+                  style="display: none" /></label
+              >绘制图像
+            </button>
           </div>
         </div>
         <div class="table-tabs">
@@ -672,7 +692,17 @@
       <div class="spreadsheet-header">
         <h2>电子表格</h2>
         <div>
-          <button id="spreadsheet-clear" class="text-btn">清空</button>
+          <button id="spreadsheet-clear" class="text-btn">
+            <button id="ss-export-csv" class="text-btn" title="导出CSV">CSV</button>
+            <button id="ss-export-json" class="text-btn" title="导出JSON">JSON</button>
+            <label class="text-btn" title="导入"
+              >导入<input
+                type="file"
+                id="ss-import-file"
+                accept=".csv,.json"
+                style="display: none" /></label
+            >清空
+          </button>
           <button id="spreadsheet-close" class="icon-btn" aria-label="关闭">
             <svg
               width="18"

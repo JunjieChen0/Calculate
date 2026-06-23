@@ -54,6 +54,120 @@ export class TableManager {
     this.plotResult?.classList.toggle('active', tab === 'plot');
   }
 
+  getLastData() {
+    return this._lastData || null;
+  }
+
+  exportCSV() {
+    const d = this._lastData;
+    if (!d || d.data.length === 0) return;
+    const hasG = d.data2 && d.data2.length > 0;
+    let csv = hasG ? 'x,f(x),g(x)' : 'x,f(x)';
+    csv += '\n';
+    d.data.forEach((row, i) => {
+      const g = hasG && d.data2[i] ? d.data2[i].y : '';
+      csv += row.x + ',' + row.y + (hasG ? ',' + g : '') + '\n';
+    });
+    this._download(csv, 'table_export.csv', 'text/csv');
+  }
+
+  exportJSON() {
+    const d = this._lastData;
+    if (!d || d.data.length === 0) return;
+    const obj = {
+      expression: d.expression,
+      expression2: d.expression2 || '',
+      start: d.start,
+      end: d.end,
+      step: d.step,
+      data: d.data.map((row, i) => ({
+        x: row.x,
+        y: row.y,
+        ...(d.data2 && d.data2[i] ? { g: d.data2[i].y } : {})
+      }))
+    };
+    this._download(JSON.stringify(obj, null, 2), 'table_export.json', 'application/json');
+  }
+
+  importCSV(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const text = e.target.result;
+      const lines = text.trim().split(/[\r\n]+/);
+      if (lines.length < 2) return;
+      const header = lines[0].split(',');
+      const hasG = header.length >= 3;
+      const data = [];
+      const data2 = hasG ? [] : null;
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',');
+        const x = parseFloat(cols[0]);
+        const y = parseFloat(cols[1]);
+        if (!isNaN(x) && !isNaN(y)) {
+          data.push({ x, y });
+          if (hasG && data2) data2.push({ x, y: parseFloat(cols[2]) || 0 });
+        }
+      }
+      if (data.length > 0) {
+        this._lastData = {
+          data,
+          data2,
+          expression: 'imported',
+          expression2: '',
+          start: data[0].x,
+          end: data[data.length - 1].x,
+          step: 1
+        };
+        this.render(data, data2);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  importJSON(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const obj = JSON.parse(e.target.result);
+        const data = obj.data.map(d => ({ x: d.x, y: d.y }));
+        const data2 =
+          obj.data[0] && obj.data[0].g !== undefined
+            ? obj.data.map(d => ({ x: d.x, y: d.g }))
+            : null;
+        this._lastData = {
+          data,
+          data2,
+          expression: obj.expression || 'imported',
+          expression2: obj.expression2 || '',
+          start: obj.start,
+          end: obj.end,
+          step: obj.step
+        };
+        if (this.tableExpression && obj.expression) this.tableExpression.value = obj.expression;
+        if (this.tableExpression2 && obj.expression2) this.tableExpression2.value = obj.expression2;
+        if (this.tableStart && obj.start !== undefined) this.tableStart.value = obj.start;
+        if (this.tableEnd && obj.end !== undefined) this.tableEnd.value = obj.end;
+        if (this.tableStep && obj.step !== undefined) this.tableStep.value = obj.step;
+        this.render(data, data2);
+      } catch {
+        this.showEmpty('JSON 格式错误');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  _download(content, filename, mime) {
+    const blob = new Blob(['\uFEFF' + content], { type: mime + ';charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   generate() {
     const expression = this.tableExpression?.value.trim();
     const expression2 = this.tableExpression2?.value.trim();
@@ -81,6 +195,15 @@ export class TableManager {
           data2 = null;
         }
       }
+      this._lastData = {
+        data,
+        data2,
+        expression,
+        expression2: expression2 || '',
+        start,
+        end,
+        step
+      };
       this.render(data, data2);
     } catch (error) {
       this.showEmpty(error.message);

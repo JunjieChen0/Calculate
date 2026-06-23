@@ -3,6 +3,7 @@ import {
   evaluateExpression,
   getAngleUnit,
   setAns,
+  pushAnsStack,
   setPrecision,
   getPrecision,
   setDisplayFormat,
@@ -64,6 +65,9 @@ const uiState = new ReactiveState({
 const undoStack = [];
 const MAX_UNDO = 50;
 
+const expressionHistory = [];
+let historyNavIndex = -1;
+
 function pushUndo() {
   undoStack.push({
     input: uiState.get('currentInput'),
@@ -85,7 +89,7 @@ const panelManager = new PanelManager();
 const settingsManager = new SettingsManager(store);
 const memoryManager = new MemoryManager(store);
 const statsEditor = new StatsEditor();
-new TableManager();
+const tableMgr = new TableManager();
 let varsPanelMgr;
 let spreadsheetMgr;
 
@@ -119,7 +123,9 @@ async function init() {
     isPanelOpen: () => panelManager.activePanel !== null,
     closePanel: () => panelManager.closeAll(),
     onToggleHelp: () => panelManager.toggle('help'),
-    onUndo: handleUndo
+    onUndo: handleUndo,
+    onHistoryUp: () => navigateHistory('up'),
+    onHistoryDown: () => navigateHistory('down')
   });
   updateDisplayWithCursor();
 }
@@ -225,6 +231,51 @@ function bindEvents() {
   document
     .getElementById('spreadsheet-clear')
     ?.addEventListener('click', () => spreadsheetMgr.clearAll());
+
+  // Table import/export
+  document
+    .getElementById('table-export-csv')
+    ?.addEventListener('click', () => tableMgr.exportCSV());
+  document
+    .getElementById('table-export-json')
+    ?.addEventListener('click', () => tableMgr.exportJSON());
+  document.getElementById('table-import-file')?.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.name.endsWith('.json')) tableMgr.importJSON(file);
+    else tableMgr.importCSV(file);
+    e.target.value = '';
+  });
+
+  // Spreadsheet import/export
+  document
+    .getElementById('ss-export-csv')
+    ?.addEventListener('click', () => spreadsheetMgr.exportCSV());
+  document
+    .getElementById('ss-export-json')
+    ?.addEventListener('click', () => spreadsheetMgr.exportJSON());
+  document.getElementById('ss-import-file')?.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.name.endsWith('.json')) spreadsheetMgr.importJSON(file);
+    else spreadsheetMgr.importCSV(file);
+    e.target.value = '';
+  });
+
+  // Stats editor import/export
+  document
+    .getElementById('stats-export-csv')
+    ?.addEventListener('click', () => statsEditor.exportCSV());
+  document
+    .getElementById('stats-export-json')
+    ?.addEventListener('click', () => statsEditor.exportJSON());
+  document.getElementById('stats-import-file')?.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.name.endsWith('.json')) statsEditor.importJSON(file);
+    else statsEditor.importCSV(file);
+    e.target.value = '';
+  });
   document
     .getElementById('settings-toggle')
     .addEventListener('click', () => panelManager.toggle('settings'));
@@ -405,6 +456,15 @@ function setBase(base) {
 
 function insertText(text) {
   pushUndo();
+  // Handle S-D toggle
+  if (text === 'S_D') {
+    const currentMode = getFractionMode();
+    setFractionMode(!currentMode);
+    recalculateCurrent();
+    settingsManager.save();
+    return;
+  }
+
   const insertValue = getHelperText(text);
   const currentInput = uiState.get('currentInput');
   const cursorIndex = uiState.get('cursorIndex');
@@ -458,6 +518,27 @@ function handleAutoBracket() {
   }
 }
 
+function navigateHistory(direction) {
+  if (expressionHistory.length === 0) return;
+  if (direction === 'up') {
+    if (historyNavIndex === -1) historyNavIndex = expressionHistory.length - 1;
+    else if (historyNavIndex > 0) historyNavIndex--;
+  } else {
+    if (historyNavIndex === -1) return;
+    if (historyNavIndex < expressionHistory.length - 1) {
+      historyNavIndex++;
+    } else {
+      historyNavIndex = -1;
+      uiState.batch({ currentInput: '', cursorIndex: 0 });
+      updateDisplayWithCursor();
+      return;
+    }
+  }
+  const expr = expressionHistory[historyNavIndex];
+  uiState.batch({ currentInput: expr, cursorIndex: expr.length });
+  updateDisplayWithCursor();
+}
+
 function handleCalculate() {
   const currentInput = uiState.get('currentInput');
   if (!currentInput.trim()) {
@@ -476,8 +557,12 @@ function handleCalculate() {
     const resultStr = result.result;
     uiState.set('lastResult', resultStr);
     setAns(resultStr);
+    pushAnsStack(resultStr);
     clearError();
     addHistory({ expression: expr, result: resultStr, mode: uiState.get('currentMode') });
+    expressionHistory.push(expr);
+    if (expressionHistory.length > 100) expressionHistory.shift();
+    historyNavIndex = -1;
     bus.emit('calculated', { expression: expr, result: resultStr });
     uiState.batch({ currentInput: resultStr, cursorIndex: resultStr.length });
     updateDisplayWithCursor();

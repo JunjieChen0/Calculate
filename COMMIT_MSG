@@ -1,0 +1,12 @@
+feat: fx-991 align + table import/export
+
+Complex mode: polar display, re/im/arg/conj
+Expression history: up/down arrow navigation
+Fraction S-D toggle
+Exact radical solutions for quadratic equations
+Logic operators: and/or/not in standard mode
+Stats editor: frequency column
+Extended constants, units, probability distributions
+Ans stack, rnd() function, semicolon separator
+Table/Spreadsheet/Stats: CSV+JSON import and export
+All 335 tests passing
