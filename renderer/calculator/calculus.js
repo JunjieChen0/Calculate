@@ -1,12 +1,11 @@
+import { math } from './math-instance.js';
 /**
  * 微积分模块
  * 数值导数、数值积分、求和、求积
  */
-import { create, all } from 'mathjs';
 import { NUMERICAL_DERIVATIVE_STEP, SIMPSON_INTERVALS } from '../shared/constants.js';
 import { applyAngleConversions } from './angle-utils.js';
 
-const math = create(all, { number: 'number', precision: 64 });
 
 /**
  * 数值导数（中心差分法）

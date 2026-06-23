@@ -1,3 +1,4 @@
+import { logger } from "./core/logger.js";
 const THEME_KEY = 'calculator_theme';
 
 let currentTheme = 'dark';
@@ -11,7 +12,7 @@ export async function initTheme(externalStore) {
       const saved = await store.get(THEME_KEY, 'dark');
       currentTheme = saved === 'light' ? 'light' : 'dark';
     } catch (error) {
-      console.warn('Failed to load theme:', error);
+      logger.warn('Failed to load theme:', error);
       currentTheme = 'dark';
     }
   }
@@ -51,7 +52,7 @@ function applyTheme(theme) {
 function saveTheme() {
   if (store && store.set) {
     store.set(THEME_KEY, currentTheme).catch(error => {
-      console.warn('Failed to save theme:', error);
+      logger.warn('Failed to save theme:', error);
     });
   }
 }

@@ -1,6 +1,7 @@
 import { escapeHtml, escapeAttr } from './utils/escape.js';
 import { MAX_HISTORY_ITEMS } from './shared/constants.js';
 import { debounce } from './utils/debounce.js';
+import { logger } from "./core/logger.js";
 
 const STORAGE_KEY = 'calculator_history';
 
@@ -15,7 +16,7 @@ export async function initHistory(externalStore) {
       const saved = await store.get(STORAGE_KEY, []);
       historyItems = Array.isArray(saved) ? saved.slice(0, MAX_HISTORY_ITEMS) : [];
     } catch (error) {
-      console.warn('Failed to load history:', error);
+      logger.warn('Failed to load history:', error);
       historyItems = [];
     }
   }
@@ -109,7 +110,7 @@ export function exportHistory() {
 const debouncedStoreSave = debounce(() => {
   if (store && store.set) {
     store.set(STORAGE_KEY, historyItems).catch(error => {
-      console.warn('Failed to save history:', error);
+      logger.warn('Failed to save history:', error);
       const listElement = document.getElementById('history-list');
       if (listElement) {
         const notice = document.createElement('div');
@@ -138,7 +139,11 @@ function renderHistory() {
 
   if (items.length === 0) {
     const message = searchQuery.trim() ? '未找到匹配的历史记录' : '暂无历史记录';
-    listElement.innerHTML = `<div class="history-empty">${message}</div>`;
+    listElement.textContent = '';
+    const emptyDiv = document.createElement('div');
+    emptyDiv.className = 'history-empty';
+    emptyDiv.textContent = message;
+    listElement.appendChild(emptyDiv);
     return;
   }
 

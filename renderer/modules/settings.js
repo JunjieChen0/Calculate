@@ -1,3 +1,4 @@
+import { logger } from "../core/logger.js";
 import {
   setPrecision,
   getPrecision,
@@ -77,7 +78,7 @@ export class SettingsManager {
       this.autoBracketEnabled = saved.autoBracket !== false;
       this.updateUI();
     } catch (error) {
-      console.warn('Failed to load settings:', error);
+      logger.warn('Failed to load settings:', error);
     }
   }
 
@@ -101,7 +102,7 @@ export class SettingsManager {
         complexDisplayFormat: getComplexDisplayFormat()
       });
     } catch (error) {
-      console.warn('Failed to save settings:', error);
+      logger.warn('Failed to save settings:', error);
     }
   }
 

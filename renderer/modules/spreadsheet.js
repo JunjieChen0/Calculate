@@ -1,3 +1,5 @@
+import { downloadFile } from '../utils/download.js';
+
 const NUM_COLS = 5;
 const NUM_ROWS = 20;
 const COL_LABELS = ['A', 'B', 'C', 'D', 'E'];
@@ -388,7 +390,7 @@ export class SpreadsheetManager {
       }
       rows.push(row.join(','));
     }
-    this._download(rows.join('\n'), 'spreadsheet.csv', 'text/csv');
+    downloadFile(rows.join('\n'), 'spreadsheet.csv', 'text/csv');
   }
 
   exportJSON() {
@@ -396,7 +398,7 @@ export class SpreadsheetManager {
     for (const [k, v] of Object.entries(this.cells)) {
       if (v !== '' && v !== undefined) obj.cells[k] = v;
     }
-    this._download(JSON.stringify(obj, null, 2), 'spreadsheet.json', 'application/json');
+    downloadFile(JSON.stringify(obj, null, 2), 'spreadsheet.json', 'application/json');
   }
 
   importCSV(file) {
@@ -450,18 +452,6 @@ export class SpreadsheetManager {
       }
     };
     reader.readAsText(file);
-  }
-
-  _download(content, filename, mime) {
-    const blob = new Blob(['﻿' + content], { type: mime + ';charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   }
 
   clearAll() {

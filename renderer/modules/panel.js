@@ -15,6 +15,11 @@ export class PanelManager {
     this.overlay?.addEventListener('click', () => this.closeAll());
   }
 
+    /**
+   * 切换指定面板的显示/隐藏
+   * @param {string} panel - 面板名称
+   * @param {HTMLElement} [triggerElement] - 触发元素，用于关闭后恢复焦点
+   */
   toggle(panel, triggerElement) {
     if (this.activePanel === panel) {
       this.closeAll();
@@ -41,6 +46,9 @@ export class PanelManager {
     this.overlay?.classList.add('show');
   }
 
+    /**
+   * 关闭所有面板并恢复焦点
+   */
   closeAll() {
     // Remove focus trap from active panel
     if (this.activePanel) {

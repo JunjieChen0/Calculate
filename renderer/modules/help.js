@@ -633,6 +633,7 @@ export class HelpPanelManager {
 
   render() {
     if (this.content) {
+      // Safe: HELP_CONTENT is a compile-time static string, no user input
       this.content.innerHTML = HELP_CONTENT[this.currentLang] || HELP_CONTENT.zh;
     }
   }

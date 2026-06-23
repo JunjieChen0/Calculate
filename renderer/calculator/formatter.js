@@ -1,8 +1,13 @@
+import { math } from './math-instance.js';
 /**
  * 结果格式化模块
  * 处理数值格式化、工程符号、分数转换、矩阵字符串化、错误消息友好化
  */
-import { create, all } from 'mathjs';
+import {
+  NORM1_EXPONENT_THRESHOLD_LOW,
+  NORM2_EXPONENT_THRESHOLD_LOW,
+  NORM_EXPONENT_THRESHOLD_HIGH
+} from '../shared/constants.js';
 import {
   _getPrecision as getPrecision,
   _getDisplayFormat as getDisplayFormat,
@@ -17,7 +22,6 @@ import {
   _getComplexDisplayFormat as getComplexDisplayFormat
 } from './state.js';
 
-const math = create(all, { number: 'number', precision: 64 });
 
 /**
  * 格式化计算结果
@@ -70,7 +74,7 @@ export function formatResult(result) {
         return applySep(value.toExponential(getFixDecimals()));
       case 'norm1': {
         const abs = Math.abs(value);
-        if (abs !== 0 && (abs < 1e-2 || abs >= 1e10)) {
+        if (abs !== 0 && (abs < NORM1_EXPONENT_THRESHOLD_LOW || abs >= NORM_EXPONENT_THRESHOLD_HIGH)) {
           return applySep(value.toExponential(getFixDecimals()));
         }
         const normalValue = parseFloat(value.toPrecision(getPrecision()));
@@ -81,7 +85,7 @@ export function formatResult(result) {
       }
       case 'norm2': {
         const abs = Math.abs(value);
-        if (abs !== 0 && (abs < 1e-9 || abs >= 1e10)) {
+        if (abs !== 0 && (abs < NORM2_EXPONENT_THRESHOLD_LOW || abs >= NORM_EXPONENT_THRESHOLD_HIGH)) {
           return applySep(value.toExponential(getFixDecimals()));
         }
         const normalValue = parseFloat(value.toPrecision(getPrecision()));

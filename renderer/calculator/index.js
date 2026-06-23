@@ -73,5 +73,5 @@ export { evaluateVectorExpression } from './vector.js';
 export { handleSolve } from './solve.js';
 
 // mathjs 实例（供需要直接使用 mathjs 的模块）
-import { create, all } from 'mathjs';
-export const math = create(all, { number: 'number', precision: 64 });
+// mathjs 实例（供需要直接使用 mathjs 的模块）
+export { math } from './math-instance.js';

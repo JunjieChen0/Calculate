@@ -1,5 +1,6 @@
 import { generateTable } from '../calculator.js';
 import { PlotManager } from './plot.js';
+import { downloadFile } from '../utils/download.js';
 
 export class TableManager {
   constructor() {
@@ -68,7 +69,7 @@ export class TableManager {
       const g = hasG && d.data2[i] ? d.data2[i].y : '';
       csv += row.x + ',' + row.y + (hasG ? ',' + g : '') + '\n';
     });
-    this._download(csv, 'table_export.csv', 'text/csv');
+    downloadFile(csv, 'table_export.csv', 'text/csv');
   }
 
   exportJSON() {
@@ -86,7 +87,7 @@ export class TableManager {
         ...(d.data2 && d.data2[i] ? { g: d.data2[i].y } : {})
       }))
     };
-    this._download(JSON.stringify(obj, null, 2), 'table_export.json', 'application/json');
+    downloadFile(JSON.stringify(obj, null, 2), 'table_export.json', 'application/json');
   }
 
   importCSV(file) {
@@ -156,17 +157,7 @@ export class TableManager {
     reader.readAsText(file);
   }
 
-  _download(content, filename, mime) {
-    const blob = new Blob(['\uFEFF' + content], { type: mime + ';charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
+
 
   generate() {
     const expression = this.tableExpression?.value.trim();

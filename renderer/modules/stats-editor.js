@@ -4,7 +4,8 @@
  */
 
 export class StatsEditor {
-  constructor() {
+  constructor(onInsert) {
+    this.onInsert = onInsert;
     this.panel = document.getElementById('stats-editor-panel');
     this.body = document.getElementById('stats-editor-body');
     this.addRowBtn = document.getElementById('stats-add-row');
@@ -35,13 +36,24 @@ export class StatsEditor {
     if (this.rows.length >= this.maxRows) return;
     const idx = this.rows.length;
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td class="stats-row-num">${idx + 1}</td>
-      <td><button class="stats-del-row" data-row="${idx}" title="删除">×</button></td>
-      <td><input type="number" class="stats-input stats-x" step="any" data-row="${idx}" data-col="x" /></td>
-      <td><input type="number" class="stats-input stats-y" step="any" data-row="${idx}" data-col="y" /></td>
-      <td><input type="number" class="stats-input stats-freq" step="1" min="1" value="1" data-row="${idx}" data-col="freq" /></td>
-    `;
+        const cells = [
+      { className: "stats-row-num", text: String(idx + 1) },
+      { tag: "button", className: "stats-del-row", attrs: { "data-row": String(idx), title: "删除" }, text: "×" },
+      { tag: "input", className: "stats-input stats-x", attrs: { type: "number", step: "any", "data-row": String(idx), "data-col": "x" } },
+      { tag: "input", className: "stats-input stats-y", attrs: { type: "number", step: "any", "data-row": String(idx), "data-col": "y" } },
+      { tag: "input", className: "stats-input stats-freq", attrs: { type: "number", step: "1", min: "1", value: "1", "data-row": String(idx), "data-col": "freq" } }
+    ];
+    for (const cell of cells) {
+      const td = document.createElement("td");
+      const el = document.createElement(cell.tag || "span");
+      if (cell.className) el.className = cell.className;
+      if (cell.attrs) {
+        for (const [k, v] of Object.entries(cell.attrs)) el.setAttribute(k, v);
+      }
+      if (cell.text) el.textContent = cell.text;
+      td.appendChild(el);
+      tr.appendChild(td);
+    }
     this.body.appendChild(tr);
     this.rows.push(tr);
 
@@ -205,10 +217,8 @@ export class StatsEditor {
     const xStr = `[${x.join(',')}]`;
     const yStr = y.length > 0 ? `[${y.join(',')}]` : '';
 
-    // 触发自定义事件，让 app.js 处理
-    const event = new CustomEvent('stats-insert', {
-      detail: { x: xStr, y: yStr, xData: x, yData: y }
-    });
-    document.dispatchEvent(event);
+    if (this.onInsert) {
+      this.onInsert({ x: xStr, y: yStr, xData: x, yData: y });
+    }
   }
 }

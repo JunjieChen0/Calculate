@@ -1,16 +1,17 @@
+import { math } from './math-instance.js';
 /**
  * 求解模式模块
  * 方程求解：数值求解、二次/三次方程、线性方程组
  */
-import { create, all } from 'mathjs';
 import {
   ROOT_FINDING_TOLERANCE,
   ROOT_EQUALITY_TOLERANCE,
-  BISECTION_MAX_ITERATIONS
+  BISECTION_MAX_ITERATIONS,
+  ABERDEEN_MAX_ITERATIONS,
+  ABERDEEN_TOLERANCE
 } from '../shared/constants.js';
 import { formatResult } from './formatter.js';
 
-const math = create(all, { number: 'number', precision: 64 });
 
 /**
  * 求解表达式
@@ -349,8 +350,8 @@ function solveQuartic(a, b, c, d, e) {
     });
   }
 
-  const MAX_ITER = 500;
-  const TOLERANCE = 1e-14;
+  const MAX_ITER = ABERDEEN_MAX_ITERATIONS;
+  const TOLERANCE = ABERDEEN_TOLERANCE;
 
   for (let iter = 0; iter < MAX_ITER; iter++) {
     let maxDelta = 0;

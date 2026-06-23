@@ -42,7 +42,11 @@ export class VariablesPanelManager {
     const funcKeys = Object.keys(funcs);
 
     if (varKeys.length === 0 && funcKeys.length === 0) {
-      this.list.innerHTML = '<div class="variables-empty">暂无存储变量</div>';
+      this.list.textContent = '';
+      const emptyDiv = document.createElement('div');
+      emptyDiv.className = 'variables-empty';
+      emptyDiv.textContent = '暂无存储变量';
+      this.list.appendChild(emptyDiv);
       return;
     }
 

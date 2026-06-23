@@ -1,4 +1,5 @@
 import { inputToLatex, renderFormula, renderResult } from '../formula-renderer.js';
+import { logger } from "../core/logger.js";
 
 const formulaPreview = document.getElementById('formula-preview');
 const resultDisplay = document.getElementById('result-display');
@@ -70,6 +71,6 @@ export async function copyResult(lastResult) {
   try {
     await navigator.clipboard.writeText(String(lastResult));
   } catch {
-    console.error('Failed to copy result');
+    logger.error('[Clipboard] Failed to copy result');
   }
 }

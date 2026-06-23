@@ -1,8 +1,8 @@
+import { math } from './math-instance.js';
 /**
  * 核心求值引擎模块
  * 表达式求值主入口，协调各模式处理器
  */
-import { create, all } from 'mathjs';
 import { MAX_TABLE_DATA_POINTS } from '../shared/constants.js';
 import {
   _getAngleUnit as getAngleUnit,
@@ -27,7 +27,6 @@ import { evaluateBaseExpression } from './base.js';
 import { evaluateVectorExpression } from './vector.js';
 import { handleSolve } from './solve.js';
 
-const math = create(all, { number: 'number', precision: 64 });
 
 /**
  * 评估自定义函数调用
@@ -47,6 +46,12 @@ function evaluateCustomFunction(name, argValue) {
  * 安全求值数学表达式
  * @param {string} expression - 表达式
  * @param {string} mode - 计算模式
+ * @returns {{ success: boolean, result?: string, error?: string }}
+ */
+/**
+ * 安全求数学表达式的值
+ * @param {string} expression - 数学表达式
+ * @param {string} mode - 计算模式: standard|complex|matrix|vector|solve|base|convert|stats
  * @returns {{ success: boolean, result?: string, error?: string }}
  */
 export function evaluateExpression(expression, mode = 'standard') {
@@ -280,6 +285,14 @@ function handleCalculusResult(calculusResult) {
 
 /**
  * 生成数值表格
+ */
+/**
+ * 生成数值表格
+ * @param {string} expression - 函数表达式
+ * @param {number} start - 起始值
+ * @param {number} end - 结束值
+ * @param {number} step - 步长
+ * @returns {Array<{x: number, y: string}>}
  */
 export function generateTable(expression, start, end, step) {
   if (!expression || expression.trim() === '') {
