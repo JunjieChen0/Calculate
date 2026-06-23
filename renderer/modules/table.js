@@ -157,8 +157,6 @@ export class TableManager {
     reader.readAsText(file);
   }
 
-
-
   generate() {
     const expression = this.tableExpression?.value.trim();
     const expression2 = this.tableExpression2?.value.trim();

@@ -1,4 +1,4 @@
-import { logger } from "./core/logger.js";
+import { logger } from './core/logger.js';
 const THEME_KEY = 'calculator_theme';
 
 let currentTheme = 'dark';

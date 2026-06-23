@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ## [1.0.0] - 2026-06-22
 
 ### Added
+
 - Standard calculator with basic arithmetic operations
 - Scientific functions (trig, log, exp, hyperbolic)
 - Complex number mode (rectangular and polar)
@@ -29,6 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - 335 automated tests
 
 ### Security
+
 - Electron context isolation and sandbox mode
 - Content Security Policy (CSP)
 - Store key whitelist with size limits

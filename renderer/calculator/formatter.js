@@ -22,7 +22,6 @@ import {
   _getComplexDisplayFormat as getComplexDisplayFormat
 } from './state.js';
 
-
 /**
  * 格式化计算结果
  */
@@ -74,7 +73,10 @@ export function formatResult(result) {
         return applySep(value.toExponential(getFixDecimals()));
       case 'norm1': {
         const abs = Math.abs(value);
-        if (abs !== 0 && (abs < NORM1_EXPONENT_THRESHOLD_LOW || abs >= NORM_EXPONENT_THRESHOLD_HIGH)) {
+        if (
+          abs !== 0 &&
+          (abs < NORM1_EXPONENT_THRESHOLD_LOW || abs >= NORM_EXPONENT_THRESHOLD_HIGH)
+        ) {
           return applySep(value.toExponential(getFixDecimals()));
         }
         const normalValue = parseFloat(value.toPrecision(getPrecision()));
@@ -85,7 +87,10 @@ export function formatResult(result) {
       }
       case 'norm2': {
         const abs = Math.abs(value);
-        if (abs !== 0 && (abs < NORM2_EXPONENT_THRESHOLD_LOW || abs >= NORM_EXPONENT_THRESHOLD_HIGH)) {
+        if (
+          abs !== 0 &&
+          (abs < NORM2_EXPONENT_THRESHOLD_LOW || abs >= NORM_EXPONENT_THRESHOLD_HIGH)
+        ) {
           return applySep(value.toExponential(getFixDecimals()));
         }
         const normalValue = parseFloat(value.toPrecision(getPrecision()));

@@ -1,12 +1,28 @@
-feat: fx-991 align + table import/export
+refactor: production-grade code quality improvements
 
-Complex mode: polar display, re/im/arg/conj
-Expression history: up/down arrow navigation
-Fraction S-D toggle
-Exact radical solutions for quadratic equations
-Logic operators: and/or/not in standard mode
-Stats editor: frequency column
-Extended constants, units, probability distributions
-Ans stack, rnd() function, semicolon separator
-Table/Spreadsheet/Stats: CSV+JSON import and export
-All 335 tests passing
+Architecture:
+- mathjs singleton: 7 duplicate instances -> 1 shared instance
+- Split special-functions.js (1184 lines) into 4 modules:
+  probability.js, regression.js, number-theory.js, special-functions.js
+- Split app.js: extract UndoManager, ExpressionHistory, input-handler
+
+Security:
+- innerHTML safety: 4 instances replaced with DOM API
+- Electron: permission request handler, security headers
+  (X-Content-Type-Options, X-Frame-Options)
+- Custom modal dialog replaces native confirm()
+
+Code quality:
+- Extract 16 magic numbers to shared/constants.js
+- Unified downloadFile() utility (removed 3 duplicates)
+- Unified event communication (CustomEvent -> callback)
+- Logger integration: all console.warn/error -> logger.warn/error
+- JSDoc annotations for public APIs
+
+Tooling:
+- CHANGELOG.md with full v1.0.0 feature list
+- Vitest coverage thresholds (lines 60%, branches 50%, functions 60%)
+- @vitest/coverage-v8 installed
+
+Lint: 0 errors, 0 warnings
+Tests: 335 passed, 0 failed

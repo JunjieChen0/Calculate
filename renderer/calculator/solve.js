@@ -12,7 +12,6 @@ import {
 } from '../shared/constants.js';
 import { formatResult } from './formatter.js';
 
-
 /**
  * 求解表达式
  */

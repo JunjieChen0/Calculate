@@ -1,4 +1,4 @@
-import { logger } from "./logger.js";
+import { logger } from './logger.js';
 /**
  * 轻量级事件总线 —— 模块间解耦通信
  */

@@ -1,7 +1,7 @@
 import { escapeHtml, escapeAttr } from './utils/escape.js';
 import { MAX_HISTORY_ITEMS } from './shared/constants.js';
 import { debounce } from './utils/debounce.js';
-import { logger } from "./core/logger.js";
+import { logger } from './core/logger.js';
 
 const STORAGE_KEY = 'calculator_history';
 

@@ -4,7 +4,6 @@ import { math } from './math-instance.js';
  * 向量运算：点积、叉积、模、单位向量、投影
  */
 
-
 /**
  * 向量表达式求值
  */

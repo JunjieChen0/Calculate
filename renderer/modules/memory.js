@@ -1,5 +1,5 @@
 import { FEEDBACK_DISPLAY_TIMEOUT } from '../shared/constants.js';
-import { logger } from "../core/logger.js";
+import { logger } from '../core/logger.js';
 
 export class MemoryManager {
   constructor(store) {

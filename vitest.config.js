@@ -6,8 +6,8 @@ export default defineConfig({
     environment: 'jsdom',
     testTimeout: 10000,
     coverage: {
-      provider: "v8",
-      reporter: ["text", "html"],
+      provider: 'v8',
+      reporter: ['text', 'html'],
       thresholds: {
         lines: 60,
         branches: 50,

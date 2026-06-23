@@ -1743,7 +1743,9 @@ body::after {
   cursor: pointer;
   transition: opacity 0.15s;
 }
-.modal-btn:hover { opacity: 0.85; }
+.modal-btn:hover {
+  opacity: 0.85;
+}
 .modal-cancel {
   background: var(--bg-tertiary, #3a3a5e);
   color: var(--text-primary, #e0e0e0);

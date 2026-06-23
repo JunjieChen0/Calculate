@@ -146,8 +146,8 @@ session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
   callback({
     responseHeaders: {
       ...details.responseHeaders,
-      "X-Content-Type-Options": ["nosniff"],
-      "X-Frame-Options": ["DENY"]
+      'X-Content-Type-Options': ['nosniff'],
+      'X-Frame-Options': ['DENY']
     }
   });
 });

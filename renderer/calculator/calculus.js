@@ -6,7 +6,6 @@ import { math } from './math-instance.js';
 import { NUMERICAL_DERIVATIVE_STEP, SIMPSON_INTERVALS } from '../shared/constants.js';
 import { applyAngleConversions } from './angle-utils.js';
 
-
 /**
  * 数值导数（中心差分法）
  */

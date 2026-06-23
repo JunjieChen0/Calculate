@@ -1,5 +1,5 @@
 import { inputToLatex, renderFormula, renderResult } from '../formula-renderer.js';
-import { logger } from "../core/logger.js";
+import { logger } from '../core/logger.js';
 
 const formulaPreview = document.getElementById('formula-preview');
 const resultDisplay = document.getElementById('result-display');

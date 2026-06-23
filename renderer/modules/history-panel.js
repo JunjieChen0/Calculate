@@ -1,4 +1,4 @@
-import { confirmAsync } from "./modal.js";
+import { confirmAsync } from './modal.js';
 import {
   clearHistory,
   deleteHistoryItem,

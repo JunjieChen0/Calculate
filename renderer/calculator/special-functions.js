@@ -9,11 +9,39 @@ import { _getAngleUnit as getAngleUnit } from './state.js';
 import { formatResult } from './formatter.js';
 import { getAngleUnitSuffix } from './angle-utils.js';
 
-import { uniformPDF, uniformCDF, exponentialPDF, exponentialCDF, normalCDF, binomialPMF, poissonPMF, binomialCDF, poissonCDF, invNormalCDF, chiSquaredCDF, tDistributionCDF, fDistributionCDF } from './probability.js';
-import { linearRegression, quadraticRegression, exponentialRegression, powerRegression, logarithmicRegression, logisticRegression } from './regression.js';
-import { gcd, lcm, factorize, solveQuadraticInequality, solveGeneralInequality, decimalToDMS, dmsToDecimal } from './number-theory.js';
+import {
+  uniformPDF,
+  uniformCDF,
+  exponentialPDF,
+  exponentialCDF,
+  normalCDF,
+  binomialPMF,
+  poissonPMF,
+  binomialCDF,
+  poissonCDF,
+  invNormalCDF,
+  chiSquaredCDF,
+  tDistributionCDF,
+  fDistributionCDF
+} from './probability.js';
+import {
+  linearRegression,
+  quadraticRegression,
+  exponentialRegression,
+  powerRegression,
+  logarithmicRegression,
+  logisticRegression
+} from './regression.js';
+import {
+  gcd,
+  lcm,
+  factorize,
+  solveQuadraticInequality,
+  solveGeneralInequality,
+  decimalToDMS,
+  dmsToDecimal
+} from './number-theory.js';
 import { DICE_MAX_ROLLS, COIN_MAX_FLIPS } from '../shared/constants.js';
-
 
 // ── 预编译正则表达式（避免每次调用重新创建） ──
 const PATTERNS = Object.freeze({

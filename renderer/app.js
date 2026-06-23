@@ -50,8 +50,8 @@ import { errorHandler } from './core/errors.js';
 import { UndoManager } from './app/undo-manager.js';
 import { ExpressionHistory } from './app/expression-history.js';
 import { applyBackspace, applyInsert } from './app/input-handler.js';
-import { logger } from "./core/logger.js"
-import { confirmAsync } from "./modules/modal.js";
+import { logger } from './core/logger.js';
+import { confirmAsync } from './modules/modal.js';
 
 // ── DOM Elements ──
 const helperPanel = document.getElementById('helper-panel');
@@ -65,7 +65,6 @@ const uiState = new ReactiveState({
   lastResult: '0',
   cursorIndex: 0
 });
-
 
 // -- undo/history managers --
 const undoManager = new UndoManager();
@@ -81,7 +80,6 @@ function handleUndo() {
   uiState.batch({ currentInput: state.input, cursorIndex: state.cursorIndex });
   updateDisplayWithCursor();
 }
-
 
 // ── Managers ──
 const store = createStore();
@@ -203,7 +201,6 @@ function bindEvents() {
       }
     });
   });
-
 
   // Header buttons
   document
@@ -513,7 +510,6 @@ function handleAutoBracket() {
     updateDisplayWithCursor();
   }
 }
-
 
 function navigateHistory(direction) {
   const expr = expressionHistory.navigate(direction);

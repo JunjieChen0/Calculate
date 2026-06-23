@@ -36,16 +36,40 @@ export class StatsEditor {
     if (this.rows.length >= this.maxRows) return;
     const idx = this.rows.length;
     const tr = document.createElement('tr');
-        const cells = [
-      { className: "stats-row-num", text: String(idx + 1) },
-      { tag: "button", className: "stats-del-row", attrs: { "data-row": String(idx), title: "删除" }, text: "×" },
-      { tag: "input", className: "stats-input stats-x", attrs: { type: "number", step: "any", "data-row": String(idx), "data-col": "x" } },
-      { tag: "input", className: "stats-input stats-y", attrs: { type: "number", step: "any", "data-row": String(idx), "data-col": "y" } },
-      { tag: "input", className: "stats-input stats-freq", attrs: { type: "number", step: "1", min: "1", value: "1", "data-row": String(idx), "data-col": "freq" } }
+    const cells = [
+      { className: 'stats-row-num', text: String(idx + 1) },
+      {
+        tag: 'button',
+        className: 'stats-del-row',
+        attrs: { 'data-row': String(idx), title: '删除' },
+        text: '×'
+      },
+      {
+        tag: 'input',
+        className: 'stats-input stats-x',
+        attrs: { type: 'number', step: 'any', 'data-row': String(idx), 'data-col': 'x' }
+      },
+      {
+        tag: 'input',
+        className: 'stats-input stats-y',
+        attrs: { type: 'number', step: 'any', 'data-row': String(idx), 'data-col': 'y' }
+      },
+      {
+        tag: 'input',
+        className: 'stats-input stats-freq',
+        attrs: {
+          type: 'number',
+          step: '1',
+          min: '1',
+          value: '1',
+          'data-row': String(idx),
+          'data-col': 'freq'
+        }
+      }
     ];
     for (const cell of cells) {
-      const td = document.createElement("td");
-      const el = document.createElement(cell.tag || "span");
+      const td = document.createElement('td');
+      const el = document.createElement(cell.tag || 'span');
       if (cell.className) el.className = cell.className;
       if (cell.attrs) {
         for (const [k, v] of Object.entries(cell.attrs)) el.setAttribute(k, v);
