@@ -1,0 +1,27 @@
+﻿{
+  "appId": "com.jyy.calculate",
+  "appName": "calculate_JYY",
+  "webDir": "dist/renderer",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "buildOptions": {
+      "keystorePath": null,
+      "keystoreAlias": null
+    }
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "launchAutoHide": true,
+      "launchFadeOutDuration": 500,
+      "backgroundColor": "#1e1e2e",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#1e1e2e"
+    }
+  }
+}

@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "calculate_JYY",
   "version": "1.0.0",
   "type": "module",
@@ -8,9 +8,15 @@
     "dev": "vite",
     "build": "vite build",
     "build:electron": "vite build && electron-builder",
+    "build:web": "vite build",
+    "build:android": "vite build && cap sync android",
     "preview": "vite preview",
     "start": "electron .",
     "electron:dev": "concurrently \"pnpm dev\" \"wait-on http://localhost:5173 && electron .\"",
+    "cap:init": "cap init",
+    "cap:android": "cap add android",
+    "cap:sync": "cap sync",
+    "cap:open": "cap open android",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
@@ -32,7 +38,9 @@
     "calculator",
     "scientific",
     "electron",
-    "math"
+    "math",
+    "android",
+    "capacitor"
   ],
   "author": "JYY",
   "license": "MIT",
@@ -57,6 +65,9 @@
     "wait-on": "^8.0.3"
   },
   "dependencies": {
+    "@capacitor/android": "6.2.1",
+    "@capacitor/cli": "6.2.1",
+    "@capacitor/core": "6.2.1",
     "chart.js": "^4.5.1",
     "electron-store": "^10.0.0",
     "katex": "^0.16.10",

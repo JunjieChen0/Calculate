@@ -1,0 +1,22 @@
+﻿{
+  "name": "calculate_JYY",
+  "short_name": "计算器",
+  "description": "图形化科学计算器 - calculate_JYY",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1e1e2e",
+  "theme_color": "#1e1e2e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "assets/icons/icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icons/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

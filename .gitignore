@@ -1,4 +1,4 @@
-node_modules/
+﻿node_modules/
 dist/
 build/
 out/
@@ -16,3 +16,6 @@ Thumbs.db
 build-output/
 release/
 dist-electron/
+
+# Android build artifacts
+android/

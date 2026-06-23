@@ -1,0 +1,175 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>安卓兼容性测试 - calculate_JYY</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        padding: 20px;
+        background: #f5f5f5;
+        color: #333;
+      }
+      .test-section {
+        background: white;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .test-result {
+        margin: 10px 0;
+        padding: 10px;
+        border-radius: 4px;
+      }
+      .success { background: #d4edda; color: #155724; }
+      .error { background: #f8d7da; color: #721c24; }
+      .info { background: #d1ecf1; color: #0c5460; }
+      button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      button:hover { background: #0056b3; }
+      #test-output {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 4px;
+        font-family: monospace;
+        white-space: pre-wrap;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>安卓兼容性测试 - calculate_JYY</h1>
+    
+    <div class="test-section">
+      <h2>1. 平台检测</h2>
+      <div id="platform-info" class="info">正在检测...</div>
+    </div>
+    
+    <div class="test-section">
+      <h2>2. 存储测试</h2>
+      <button onclick="testStorage()">测试存储功能</button>
+      <div id="storage-result"></div>
+    </div>
+    
+    <div class="test-section">
+      <h2>3. 触摸支持</h2>
+      <div id="touch-info" class="info">正在检测...</div>
+    </div>
+    
+    <div class="test-section">
+      <h2>4. 计算器功能测试</h2>
+      <button onclick="testCalculator()">测试计算器</button>
+      <div id="calculator-result"></div>
+    </div>
+    
+    <div class="test-section">
+      <h2>5. 测试输出</h2>
+      <div id="test-output"></div>
+    </div>
+    
+    <script type="module">
+      import { getPlatformInfo } from './utils/platform.js';
+      import { createStore } from './utils/store.js';
+      
+      // 平台检测
+      const platformInfo = getPlatformInfo();
+      document.getElementById('platform-info').innerHTML = `
+        <strong>平台:</strong> ${platformInfo.platform}<br>
+        <strong>是否Electron:</strong> ${platformInfo.isElectron}<br>
+        <strong>是否移动端:</strong> ${platformInfo.isMobile}<br>
+        <strong>是否安卓:</strong> ${platformInfo.isAndroid}<br>
+        <strong>是否iOS:</strong> ${platformInfo.isIOS}<br>
+        <strong>触摸支持:</strong> ${platformInfo.isTouchDevice}<br>
+        <strong>设备像素比:</strong> ${platformInfo.devicePixelRatio}<br>
+        <strong>用户代理:</strong> ${platformInfo.userAgent}
+      `;
+      
+      // 触摸支持检测
+      document.getElementById('touch-info').innerHTML = `
+        <strong>触摸事件支持:</strong> ${'ontouchstart' in window}<br>
+        <strong>最大触摸点:</strong> ${navigator.maxTouchPoints}<br>
+        <strong>指针事件支持:</strong> ${'onpointerdown' in window}
+      `;
+      
+      // 存储测试
+      window.testStorage = async function() {
+        const resultDiv = document.getElementById('storage-result');
+        const store = createStore();
+        
+        try {
+          // 测试写入
+          await store.set('calculator_settings', { test: true, timestamp: Date.now() });
+          resultDiv.innerHTML = '<div class="success">✅ 存储写入成功</div>';
+          
+          // 测试读取
+          const data = await store.get('calculator_settings');
+          if (data && data.test) {
+            resultDiv.innerHTML += '<div class="success">✅ 存储读取成功</div>';
+          } else {
+            resultDiv.innerHTML += '<div class="error">❌ 存储读取失败</div>';
+          }
+          
+          // 测试删除
+          await store.delete('calculator_settings');
+          resultDiv.innerHTML += '<div class="success">✅ 存储删除成功</div>';
+          
+        } catch (error) {
+          resultDiv.innerHTML = `<div class="error">❌ 存储测试失败: ${error.message}</div>`;
+        }
+      };
+      
+      // 计算器功能测试
+      window.testCalculator = async function() {
+        const resultDiv = document.getElementById('calculator-result');
+        const outputDiv = document.getElementById('test-output');
+        
+        try {
+          // 动态导入计算器模块
+          const { evaluateExpression } = await import('./calculator.js');
+          
+          const tests = [
+            { input: '1+1', expected: '2' },
+            { input: 'sin(90)', expected: '0.8939966636005579' },
+            { input: 'sqrt(16)', expected: '4' },
+            { input: '2^10', expected: '1024' }
+          ];
+          
+          let passed = 0;
+          let output = '计算器功能测试:\n';
+          
+          for (const test of tests) {
+            const result = evaluateExpression(test.input);
+            const success = result.success && result.result === test.expected;
+            
+            output += `${test.input} = ${result.result} ${success ? '✅' : '❌'}\n`;
+            
+            if (success) passed++;
+          }
+          
+          resultDiv.innerHTML = `<div class="${passed === tests.length ? 'success' : 'error'}">
+            测试结果: ${passed}/${tests.length} 通过
+          </div>`;
+          
+          outputDiv.textContent = output;
+          
+        } catch (error) {
+          resultDiv.innerHTML = `<div class="error">❌ 计算器测试失败: ${error.message}</div>`;
+          outputDiv.textContent = error.stack;
+        }
+      };
+      
+      // 自动运行平台检测
+      console.log('平台信息:', platformInfo);
+    </script>
+  </body>
+</html>
