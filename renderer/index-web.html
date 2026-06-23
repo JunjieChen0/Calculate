@@ -2,7 +2,10 @@
 <html lang="zh-CN" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -141,7 +144,12 @@
               ></path>
             </svg>
           </button>
-          <button id="theme-toggle" class="icon-btn" title="切换主题 (Ctrl+T)" aria-label="切换主题">
+          <button
+            id="theme-toggle"
+            class="icon-btn"
+            title="切换主题 (Ctrl+T)"
+            aria-label="切换主题"
+          >
             <svg
               width="20"
               height="20"
@@ -212,7 +220,7 @@
           <button class="calc-btn function-btn" data-action="abs">|x|</button>
           <button class="calc-btn function-btn" data-action="floor">⌊x⌋</button>
         </div>
-        
+
         <!-- Row 2: More Scientific Functions -->
         <div class="button-row">
           <button class="calc-btn function-btn" data-action="sin">sin</button>
@@ -221,7 +229,7 @@
           <button class="calc-btn function-btn" data-action="sqrt">√</button>
           <button class="calc-btn function-btn" data-action="ceil">⌈x⌉</button>
         </div>
-        
+
         <!-- Row 3: Logarithms and Power -->
         <div class="button-row">
           <button class="calc-btn function-btn" data-action="log">log</button>
@@ -230,7 +238,7 @@
           <button class="calc-btn paren-btn" data-action="left-paren">(</button>
           <button class="calc-btn paren-btn" data-action="right-paren">)</button>
         </div>
-        
+
         <!-- Row 4: Numbers 7-9 -->
         <div class="button-row">
           <button class="calc-btn number-btn" data-action="7">7</button>
@@ -239,7 +247,7 @@
           <button class="calc-btn clear-btn" data-action="ac">AC</button>
           <button class="calc-btn delete-btn" data-action="backspace">⌫</button>
         </div>
-        
+
         <!-- Row 5: Numbers 4-6 -->
         <div class="button-row">
           <button class="calc-btn number-btn" data-action="4">4</button>
@@ -248,7 +256,7 @@
           <button class="calc-btn operator-btn" data-action="*">×</button>
           <button class="calc-btn operator-btn" data-action="/">÷</button>
         </div>
-        
+
         <!-- Row 6: Numbers 1-3 -->
         <div class="button-row">
           <button class="calc-btn number-btn" data-action="1">1</button>
@@ -257,7 +265,7 @@
           <button class="calc-btn operator-btn" data-action="+">+</button>
           <button class="calc-btn operator-btn" data-action="-">−</button>
         </div>
-        
+
         <!-- Row 7: 0, decimal, equals -->
         <div class="button-row">
           <button class="calc-btn number-btn" data-action="0">0</button>
@@ -564,14 +572,15 @@
     <script type="module" src="app.js"></script>
     <script>
       // Register Service Worker
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker.register("/sw.js")
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker
+            .register('/sw.js')
             .then(registration => {
-              console.log("SW registered:", registration);
+              console.log('SW registered:', registration);
             })
             .catch(error => {
-              console.log("SW registration failed:", error);
+              console.log('SW registration failed:', error);
             });
         });
       }

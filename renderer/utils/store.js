@@ -35,14 +35,14 @@ class IndexedDBStore {
   async init() {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(this.dbName, 1);
-      
+
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
         this.db = request.result;
         resolve();
       };
-      
-      request.onupgradeneeded = (event) => {
+
+      request.onupgradeneeded = event => {
         const db = event.target.result;
         if (!db.objectStoreNames.contains(this.storeName)) {
           db.createObjectStore(this.storeName);
@@ -53,14 +53,14 @@ class IndexedDBStore {
 
   async get(key, defaultValue) {
     assertAllowedKey(key);
-    
+
     if (!this.db) await this.init();
-    
+
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([this.storeName], 'readonly');
       const store = transaction.objectStore(this.storeName);
       const request = store.get(key);
-      
+
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
         const result = request.result;
@@ -74,14 +74,14 @@ class IndexedDBStore {
     if (!isValidStoreValue(value)) {
       throw new Error('Invalid store value');
     }
-    
+
     if (!this.db) await this.init();
-    
+
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([this.storeName], 'readwrite');
       const store = transaction.objectStore(this.storeName);
       const request = store.put(value, key);
-      
+
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve();
     });
@@ -89,14 +89,14 @@ class IndexedDBStore {
 
   async delete(key) {
     assertAllowedKey(key);
-    
+
     if (!this.db) await this.init();
-    
+
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([this.storeName], 'readwrite');
       const store = transaction.objectStore(this.storeName);
       const request = store.delete(key);
-      
+
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve();
     });
@@ -139,17 +139,17 @@ class LocalStorageStore {
 // 存储工厂
 function createStoreAdapter() {
   const platform = getPlatform();
-  
+
   // Electron环境使用原生存储
   if (isElectron()) {
     return window.electronAPI.store;
   }
-  
+
   // 安卓和iOS平台使用IndexedDB（更好的性能和容量）
   if (platform === 'android' || platform === 'ios') {
     return new IndexedDBStore();
   }
-  
+
   // Web平台使用localStorage
   return new LocalStorageStore();
 }

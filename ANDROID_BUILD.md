@@ -56,6 +56,7 @@ pnpm cap:open
 ### 6. 构建APK
 
 在Android Studio中：
+
 1. 点击 "Build" -> "Build Bundle(s) / APK(s)" -> "Build APK(s)"
 2. 等待构建完成
 3. APK文件位于 `android/app/build/outputs/apk/debug/app-debug.apk`
@@ -91,6 +92,7 @@ D:\calculate\
 - `renderer/utils/store.js` - 多平台存储适配器
 
 支持平台：
+
 - **Electron**: 使用原生`electron-store`
 - **安卓/iOS**: 使用IndexedDB
 - **Web**: 使用localStorage
@@ -98,11 +100,13 @@ D:\calculate\
 ## 测试安卓兼容性
 
 1. 启动开发服务器：
+
    ```bash
    pnpm dev
    ```
 
 2. 访问测试页面：
+
    ```
    http://localhost:5173/test-android.html
    ```
@@ -126,6 +130,7 @@ Web版支持PWA (Progressive Web App)：
 ### 问题：构建失败
 
 **解决方案**:
+
 1. 确保Android Studio和SDK已正确安装
 2. 检查环境变量：`ANDROID_HOME`, `JAVA_HOME`
 3. 运行 `pnpm cap:sync` 重新同步
@@ -133,6 +138,7 @@ Web版支持PWA (Progressive Web App)：
 ### 问题：应用崩溃
 
 **解决方案**:
+
 1. 检查Android Studio的Logcat输出
 2. 确保Web代码在浏览器中正常工作
 3. 检查CSP (Content Security Policy)设置
@@ -140,6 +146,7 @@ Web版支持PWA (Progressive Web App)：
 ### 问题：存储不工作
 
 **解决方案**:
+
 1. 检查IndexedDB支持
 2. 确保在`store.js`中正确使用平台检测
 3. 测试页面会显示存储状态
