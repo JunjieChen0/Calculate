@@ -143,7 +143,7 @@ export function solveGeneralInequality(coeffs, op) {
     }
 
     const polyVal = evalPoly(coeffs, mid);
-    const testResult = evalIneq(polyVal > 0, op);
+    const testResult = evalIneq(polyVal, op);
 
     if (testResult) {
       // 检查边界是否包含
@@ -183,18 +183,18 @@ export function evalPoly(coeffs, x) {
   }
   return val;
 }
-export function evalIneq(polyPositive, op) {
+export function evalIneq(polyValue, op) {
   switch (op) {
     case '>':
-      return polyPositive;
+      return polyValue > 0;
     case '>=':
-      return polyPositive || true; // >=0 means not negative
+      return polyValue >= 0;
     case '<':
-      return !polyPositive;
+      return polyValue < 0;
     case '<=':
-      return !polyPositive || true;
+      return polyValue <= 0;
     default:
-      return polyPositive;
+      return polyValue > 0;
   }
 }
 export function checkBoundary(coeffs, root, op) {

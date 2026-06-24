@@ -386,7 +386,8 @@ export class SpreadsheetManager {
       const row = [r];
       for (const col of ['A', 'B', 'C', 'D', 'E']) {
         const v = this.cells[col + r] || '';
-        row.push(v.includes(',') ? '"' + v + '"' : v);
+        const escaped = v.includes('"') ? v.replace(/"/g, '""') : v;
+        row.push(v.includes(',') || v.includes('"') ? '"' + escaped + '"' : v);
       }
       rows.push(row.join(','));
     }
@@ -448,7 +449,7 @@ export class SpreadsheetManager {
           });
         }
       } catch {
-        /* ignore parse error */
+        this.statusEl && (this.statusEl.textContent = 'JSON 解析失败');
       }
     };
     reader.readAsText(file);

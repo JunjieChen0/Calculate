@@ -10,7 +10,8 @@
  * @param {string} mime - MIME 类型
  */
 export function downloadFile(content, filename, mime) {
-  const blob = new Blob(['\uFEFF' + content], { type: mime + ';charset=utf-8' });
+  const bom = mime === 'text/csv' ? '\uFEFF' : '';
+  const blob = new Blob([bom + content], { type: mime + ';charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

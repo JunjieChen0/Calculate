@@ -85,8 +85,10 @@ export function evaluateExpression(expression, mode = 'standard') {
     return { success: true, result: lastResult };
   }
 
+  let expr;
+
   try {
-    let expr = expression.trim();
+    expr = expression.trim();
 
     // Replace display symbols with mathjs-compatible ones
     expr = expr.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
@@ -163,11 +165,14 @@ export function evaluateExpression(expression, mode = 'standard') {
       if (isNaN(lo) || isNaN(hi) || lo > hi) throw new Error('randInt(a,b) 参数无效');
       return Math.floor(Math.random() * (hi - lo + 1)) + lo;
     });
+  } catch (error) {
+    return { success: false, error: getFriendlyError(error) };
+  }
 
+  try {
     // Handle special calculator functions
     const specialResult = handleSpecialFunctions(expr);
     if (specialResult !== null) {
-      // 处理微积分标记
       if (typeof specialResult === 'object' && specialResult.__calculus) {
         return handleCalculusResult(specialResult);
       }

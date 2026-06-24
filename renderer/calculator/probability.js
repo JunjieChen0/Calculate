@@ -114,7 +114,7 @@ export function factorial(n) {
     throw new Error('阶乘仅支持非负整数');
   }
   if (n > MAX_FACTORIAL_INPUT) {
-    throw new Error(`阶乘输入不能超过 ${MAX_FACTORIAL_INPUT}（结果溢出）`);
+    return Infinity;
   }
   if (n <= 1) return 1;
   let result = 1;

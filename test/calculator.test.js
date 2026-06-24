@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import {
   evaluateExpression,
   setAngleUnit,
@@ -107,7 +107,7 @@ describe('Edge cases', () => {
 });
 
 describe('Angle mode', () => {
-  afterAll(() => {
+  afterEach(() => {
     setAngleUnit('rad');
   });
 
@@ -143,7 +143,7 @@ describe('Ans variable', () => {
 });
 
 describe('Precision setting', () => {
-  afterAll(() => {
+  afterEach(() => {
     setPrecision(12);
   });
 
@@ -160,7 +160,7 @@ describe('Precision setting', () => {
 });
 
 describe('Display format', () => {
-  afterAll(() => {
+  afterEach(() => {
     setDisplayFormat('norm');
   });
 
@@ -208,7 +208,7 @@ describe('Constants library', () => {
 });
 
 describe('Base conversion', () => {
-  afterAll(() => {
+  afterEach(() => {
     setCurrentBase(10);
   });
 
@@ -241,7 +241,7 @@ describe('Bitwise operations', () => {
     setCurrentBase(10);
   });
 
-  afterAll(() => {
+  afterEach(() => {
     setCurrentBase(10);
   });
 
@@ -329,7 +329,7 @@ describe('Permutations and combinations', () => {
 });
 
 describe('Engineering notation', () => {
-  afterAll(() => {
+  afterEach(() => {
     setEngineeringNotation(false);
   });
 
@@ -341,7 +341,7 @@ describe('Engineering notation', () => {
 });
 
 describe('Fraction mode', () => {
-  afterAll(() => {
+  afterEach(() => {
     setFractionMode(false);
   });
 
@@ -945,7 +945,7 @@ describe('Poisson CDF', () => {
 });
 
 describe('Variable storage - extended', () => {
-  afterAll(() => {
+  afterEach(() => {
     evaluateExpression('A=0:B=0:C=0');
   });
 
@@ -1054,7 +1054,7 @@ describe('Matrix edge cases', () => {
 });
 
 describe('Base mode negative numbers', () => {
-  afterAll(() => {
+  afterEach(() => {
     setCurrentBase(10);
   });
 
@@ -1067,7 +1067,7 @@ describe('Base mode negative numbers', () => {
 });
 
 describe('Engineering notation large values', () => {
-  afterAll(() => {
+  afterEach(() => {
     setEngineeringNotation(false);
   });
 

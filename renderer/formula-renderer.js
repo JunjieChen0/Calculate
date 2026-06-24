@@ -1,125 +1,130 @@
 import katex from 'katex';
 
-/**
- * Convert a raw calculator input string into a KaTeX-renderable expression.
- */
+const RE_ZERO_WIDTH = /\u200B/g;
+const RE_MUL_SIGN = /×/g;
+const RE_DIV_SIGN = /÷/g;
+const RE_MINUS_SIGN = /−/g;
+const RE_HEX_PREFIX = /\b0x([0-9A-Fa-f]+)\b/g;
+const RE_BIN_PREFIX = /\b0b([01]+)\b/g;
+const RE_OCT_PREFIX = /\b0o([0-7]+)\b/g;
+const RE_TO_ARROW = /\bto\b/g;
+const RE_PI = /(?<![a-zA-Z_])pi(?![a-zA-Z_])/g;
+const RE_DEG = /(?<![a-zA-Z_])deg(?![a-zA-Z_])/g;
+const RE_GRAD = /(?<![a-zA-Z_])grad(?![a-zA-Z_])/g;
+const RE_E_CONST = /(?<![a-zA-Z_])e(?![a-zA-Z_0-9])/g;
+const RE_I_CONST = /(?<![a-zA-Z_])i(?![a-zA-Z_0-9])/g;
+
+const FUNC_REPLACEMENTS = [
+  [/\basinh\(/g, '\\text{arcsinh}('],
+  [/\bacosh\(/g, '\\text{arccosh}('],
+  [/\batanh\(/g, '\\text{arctanh}('],
+  [/\basin\(/g, '\\arcsin('],
+  [/\bacos\(/g, '\\arccos('],
+  [/\batan\(/g, '\\arctan('],
+  [/\bsinh\(/g, '\\sinh('],
+  [/\bcosh\(/g, '\\cosh('],
+  [/\btanh\(/g, '\\tanh('],
+  [/\bsin\(/g, '\\sin('],
+  [/\bcos\(/g, '\\cos('],
+  [/\btan\(/g, '\\tan('],
+  [/\blog10\(/g, '\\log_{10}('],
+  [/\blog\(/g, '\\log('],
+  [/\bln\(/g, '\\ln('],
+  [/\bsqrt\(/g, '\\sqrt('],
+  [/\bcbrt\(/g, '\\sqrt[3]('],
+  [/\bnPr\(/g, '\\text{P}('],
+  [/\bnCr\(/g, '\\text{C}('],
+  [/\brand\(/g, '\\text{rand}('],
+  [/\bround\(/g, '\\text{round}('],
+  [/\bgcd\(/g, '\\text{gcd}('],
+  [/\blcm\(/g, '\\text{lcm}('],
+  [/\bfactorize\(/g, '\\text{factorize}('],
+  [/\bd\/dx\(/g, '\\frac{d}{dx}('],
+  [/\bintegrate\(/g, '\\int('],
+  [/\bsum\(/g, '\\sum('],
+  [/\bproduct\(/g, '\\prod('],
+  [/\blinReg\(/g, '\\text{linReg}('],
+  [/\bquadReg\(/g, '\\text{quadReg}('],
+  [/\bexpReg\(/g, '\\text{expReg}('],
+  [/\bnormCDF\(/g, '\\text{normCDF}('],
+  [/\bbinomPMF\(/g, '\\text{binomPMF}('],
+  [/\bpoissonPMF\(/g, '\\text{poissonPMF}('],
+  [/\bsolveIneq\(/g, '\\text{solveIneq}('],
+  [/\btoDMS\(/g, '\\text{toDMS}('],
+  [/\btoDecimal\(/g, '\\text{toDecimal}('],
+  [/\buniformPDF\(/g, '\\text{uniformPDF}('],
+  [/\buniformCDF\(/g, '\\text{uniformCDF}('],
+  [/\bexpPDF\(/g, '\\text{expPDF}('],
+  [/\bexpCDF\(/g, '\\text{expCDF}('],
+  [/\bf\(/g, 'f('],
+  [/\bg\(/g, 'g('],
+  [/\bh\(/g, 'h('],
+  [/\bdot\(/g, '\\vec{a} \\cdot \\vec{b}('],
+  [/\bcross\(/g, '\\vec{a} \\times \\vec{b}('],
+  [/\bsolve2\(/g, '\\text{solve2}('],
+  [/\bsolve3\(/g, '\\text{solve3}('],
+  [/\bsolveLinear2\(/g, '\\text{solveLinear2}('],
+  [/\bsolveLinear3\(/g, '\\text{solveLinear3}(']
+];
+
+const RE_IMPLICIT_DIGIT_CMD = /(\d)(\\)/g;
+const RE_IMPLICIT_DIGIT_PAREN = /(\d)(\()/g;
+const RE_IMPLICIT_PAREN_DIGIT = /(\))(\d)/g;
+const RE_IMPLICIT_PAREN_PAREN = /(\))(\()/g;
+const RE_IMPLICIT_PAREN_ALPHA = /(\))([a-zA-Z\\])/g;
+const RE_FACTORIAL = /!/g;
+
 export function inputToLatex(input) {
   if (!input || input.trim() === '') {
     return '';
   }
 
-  let expr = input;
-  const cursorPos = expr.indexOf('\u200B');
-  if (cursorPos !== -1) {
-    expr = expr.replace(/\u200B/g, '');
+  if (input.length > 1000) {
+    return '\\text{输入过长}';
   }
 
-  // Replace display operators
-  expr = expr.replace(/×/g, '\\cdot ');
-  expr = expr.replace(/÷/g, '\\div ');
-  expr = expr.replace(/−/g, '-');
+  let expr = input;
+  if (expr.indexOf('\u200B') !== -1) {
+    expr = expr.replace(RE_ZERO_WIDTH, '');
+  }
 
-  // Base prefixes (before constants and implicit mult)
-  expr = expr.replace(/\b0x([0-9A-Fa-f]+)\b/g, '\\text{0x$1}');
-  expr = expr.replace(/\b0b([01]+)\b/g, '\\text{0b$1}');
-  expr = expr.replace(/\b0o([0-7]+)\b/g, '\\text{0o$1}');
+  expr = expr.replace(RE_MUL_SIGN, '\\cdot ');
+  expr = expr.replace(RE_DIV_SIGN, '\\div ');
+  expr = expr.replace(RE_MINUS_SIGN, '-');
 
-  // Unit conversion arrow
-  expr = expr.replace(/\bto\b/g, '\\to ');
+  expr = expr.replace(RE_HEX_PREFIX, '\\text{0x$1}');
+  expr = expr.replace(RE_BIN_PREFIX, '\\text{0b$1}');
+  expr = expr.replace(RE_OCT_PREFIX, '\\text{0o$1}');
 
-  // Constants (use lookbehind that allows digit prefix: 2pi → 2\pi)
-  expr = expr.replace(/(?<![a-zA-Z_])pi(?![a-zA-Z_])/g, '\\pi');
-  expr = expr.replace(/(?<![a-zA-Z_])deg(?![a-zA-Z_])/g, '^{\\circ}');
-  expr = expr.replace(/(?<![a-zA-Z_])grad(?![a-zA-Z_])/g, '^{g}');
-  expr = expr.replace(/(?<![a-zA-Z_])e(?![a-zA-Z_0-9])/g, 'e');
-  expr = expr.replace(/(?<![a-zA-Z_])i(?![a-zA-Z_0-9])/g, 'i');
+  expr = expr.replace(RE_TO_ARROW, '\\to ');
 
-  // Functions with special LaTeX names
-  expr = expr.replace(/\bsin\(/g, '\\sin(');
-  expr = expr.replace(/\bcos\(/g, '\\cos(');
-  expr = expr.replace(/\btan\(/g, '\\tan(');
-  expr = expr.replace(/\basin\(/g, '\\arcsin(');
-  expr = expr.replace(/\bacos\(/g, '\\arccos(');
-  expr = expr.replace(/\batan\(/g, '\\arctan(');
-  expr = expr.replace(/\bsinh\(/g, '\\sinh(');
-  expr = expr.replace(/\bcosh\(/g, '\\cosh(');
-  expr = expr.replace(/\btanh\(/g, '\\tanh(');
-  expr = expr.replace(/\basinh\(/g, '\\text{arcsinh}(');
-  expr = expr.replace(/\bacosh\(/g, '\\text{arccosh}(');
-  expr = expr.replace(/\batanh\(/g, '\\text{arctanh}(');
-  expr = expr.replace(/\blog10\(/g, '\\log_{10}(');
-  expr = expr.replace(/\blog\(/g, '\\log(');
-  expr = expr.replace(/\bln\(/g, '\\ln(');
-  expr = expr.replace(/\bsqrt\(/g, '\\sqrt(');
-  expr = expr.replace(/\bcbrt\(/g, '\\sqrt[3](');
-  expr = expr.replace(/\bnPr\(/g, '\\text{P}(');
-  expr = expr.replace(/\bnCr\(/g, '\\text{C}(');
-  expr = expr.replace(/\brand\(/g, '\\text{rand}(');
-  expr = expr.replace(/\bround\(/g, '\\text{round}(');
-  expr = expr.replace(/\bgcd\(/g, '\\text{gcd}(');
-  expr = expr.replace(/\blcm\(/g, '\\text{lcm}(');
-  expr = expr.replace(/\bfactorize\(/g, '\\text{factorize}(');
+  expr = expr.replace(RE_PI, '\\pi');
+  expr = expr.replace(RE_DEG, '^{\\circ}');
+  expr = expr.replace(RE_GRAD, '^{g}');
+  expr = expr.replace(RE_E_CONST, 'e');
+  expr = expr.replace(RE_I_CONST, 'i');
 
-  // Calculus functions
-  expr = expr.replace(/\bd\/dx\(/g, '\\frac{d}{dx}(');
-  expr = expr.replace(/\bintegrate\(/g, '\\int(');
-  expr = expr.replace(/\bsum\(/g, '\\sum(');
-  expr = expr.replace(/\bproduct\(/g, '\\prod(');
+  for (const [re, replacement] of FUNC_REPLACEMENTS) {
+    expr = expr.replace(re, replacement);
+  }
 
-  // Regression and distribution functions
-  expr = expr.replace(/\blinReg\(/g, '\\text{linReg}(');
-  expr = expr.replace(/\bquadReg\(/g, '\\text{quadReg}(');
-  expr = expr.replace(/\bexpReg\(/g, '\\text{expReg}(');
-  expr = expr.replace(/\bnormCDF\(/g, '\\text{normCDF}(');
-  expr = expr.replace(/\bbinomPMF\(/g, '\\text{binomPMF}(');
-  expr = expr.replace(/\bpoissonPMF\(/g, '\\text{poissonPMF}(');
-  expr = expr.replace(/\bsolveIneq\(/g, '\\text{solveIneq}(');
-  expr = expr.replace(/\btoDMS\(/g, '\\text{toDMS}(');
-  expr = expr.replace(/\btoDecimal\(/g, '\\text{toDecimal}(');
-  expr = expr.replace(/\buniformPDF\(/g, '\\text{uniformPDF}(');
-  expr = expr.replace(/\buniformCDF\(/g, '\\text{uniformCDF}(');
-  expr = expr.replace(/\bexpPDF\(/g, '\\text{expPDF}(');
-  expr = expr.replace(/\bexpCDF\(/g, '\\text{expCDF}(');
-
-  // Custom functions
-  expr = expr.replace(/\bf\(/g, 'f(');
-  expr = expr.replace(/\bg\(/g, 'g(');
-  expr = expr.replace(/\bh\(/g, 'h(');
-
-  // Delimiter-matched functions: abs, floor, ceil, norm, mag
   expr = replaceDelimitedFunc(expr, 'abs', '\\left|', '\\right|');
   expr = replaceDelimitedFunc(expr, 'floor', '\\lfloor ', '\\rfloor');
   expr = replaceDelimitedFunc(expr, 'ceil', '\\lceil ', '\\rceil');
   expr = replaceDelimitedFunc(expr, 'norm', '\\left\\|', '\\right\\|');
   expr = replaceDelimitedFunc(expr, 'mag', '\\left\\|', '\\right\\|');
 
-  // Vector functions
-  expr = expr.replace(/\bdot\(/g, '\\vec{a} \\cdot \\vec{b}(');
-  expr = expr.replace(/\bcross\(/g, '\\vec{a} \\times \\vec{b}(');
+  expr = expr.replace(RE_IMPLICIT_DIGIT_CMD, '$1\\cdot $2');
+  expr = expr.replace(RE_IMPLICIT_DIGIT_PAREN, '$1\\cdot $2');
+  expr = expr.replace(RE_IMPLICIT_PAREN_DIGIT, '$1\\cdot $2');
+  expr = expr.replace(RE_IMPLICIT_PAREN_PAREN, '$1\\cdot $2');
+  expr = expr.replace(RE_IMPLICIT_PAREN_ALPHA, '$1\\cdot $2');
 
-  // Equation solvers
-  expr = expr.replace(/\bsolve2\(/g, '\\text{solve2}(');
-  expr = expr.replace(/\bsolve3\(/g, '\\text{solve3}(');
-  expr = expr.replace(/\bsolveLinear2\(/g, '\\text{solveLinear2}(');
-  expr = expr.replace(/\bsolveLinear3\(/g, '\\text{solveLinear3}(');
-
-  // Implicit multiplication (after all replacements, no letter-based rule)
-  expr = expr.replace(/(\d)(\\)/g, '$1\\cdot $2');
-  expr = expr.replace(/(\d)(\()/g, '$1\\cdot $2');
-  expr = expr.replace(/(\))(\d)/g, '$1\\cdot $2');
-  expr = expr.replace(/(\))(\()/g, '$1\\cdot $2');
-  expr = expr.replace(/(\))([a-zA-Z\\])/g, '$1\\cdot $2');
-
-  // Powers: handle nested parentheses for exponent
   expr = processPowers(expr);
-
-  // Fractions: a/b -> \frac{a}{b}
   expr = processFractions(expr);
 
-  // Factorial
-  expr = expr.replace(/!/g, '{!}');
+  expr = expr.replace(RE_FACTORIAL, '{!}');
 
-  // Matrix and vector formatting
   expr = formatMatrixInput(expr);
 
   return expr;

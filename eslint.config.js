@@ -55,6 +55,7 @@ export default [
       'build/**',
       'out/**',
       'coverage/**',
+      'android/**',
       '.vscode/**',
       '.idea/**'
     ]
